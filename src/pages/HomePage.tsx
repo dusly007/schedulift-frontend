@@ -19,29 +19,29 @@ function HomePage() {
                 </div>
             </section>
 
-            {/* Section services */}
+            {/* Section services — cohérent avec le seeder backend */}
             <section style={styles.services}>
                 <h2 style={styles.sectionTitle}>Nos services</h2>
                 <div style={styles.cards}>
                     <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Musculation</h3>
-                        <p style={styles.cardText}>Des cours adaptés à tous les niveaux pour développer votre force.</p>
-                    </div>
-                    <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Yoga & Étirements</h3>
-                        <p style={styles.cardText}>Améliorez votre flexibilité et votre bien-être mental.</p>
+                        <h3 style={styles.cardTitle}>Musculation — Poitrine</h3>
+                        <p style={styles.cardText}>Cours ciblé sur les pectoraux.</p>
                     </div>
                     <div style={styles.card}>
                         <h3 style={styles.cardTitle}>Cardio Intensif</h3>
-                        <p style={styles.cardText}>Brûlez des calories et améliorez votre endurance cardiovasculaire.</p>
+                        <p style={styles.cardText}>Séance cardio pour brûler des calories.</p>
                     </div>
                     <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Pilates</h3>
-                        <p style={styles.cardText}>Renforcez votre corps en douceur et améliorez votre posture.</p>
+                        <h3 style={styles.cardTitle}>Yoga & Étirements</h3>
+                        <p style={styles.cardText}>Yoga axé sur le tronc et la flexibilité.</p>
                     </div>
                     <div style={styles.card}>
                         <h3 style={styles.cardTitle}>Musculation — Dos</h3>
-                        <p style={styles.cardText}>Renforcement musculaire du dos et des lombaires.</p>
+                        <p style={styles.cardText}>Renforcement du dos et des lombaires.</p>
+                    </div>
+                    <div style={styles.card}>
+                        <h3 style={styles.cardTitle}>Pilates</h3>
+                        <p style={styles.cardText}>Pilates centré sur les jambes.</p>
                     </div>
                 </div>
             </section>
