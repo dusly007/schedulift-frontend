@@ -6,6 +6,7 @@ import SignupPage from './pages/SignupPage';
 import CoursesPage from './pages/CoursePage';
 import ContactPage from './pages/ContactPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import ReservationsPage from './pages/ReservationsPage';
 
 function App() {
   return (
@@ -24,7 +25,7 @@ function App() {
             {/* Accessible seulement si connecté */}
             <Route path="/reservations" element={
               <ProtectedRoute>
-                <CoursesPage />
+                <ReservationsPage />
               </ProtectedRoute>
             } />
           </Routes>
