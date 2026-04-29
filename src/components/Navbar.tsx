@@ -1,40 +1,51 @@
-import logo from '../assets/logo.png';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Link, useNavigate } from 'react-router-dom'; 
+import logo from '../assets/logo.png';
 
 function Navbar() {
-    const { isLoggedIn, setUser } = useAuth(); //état de connexion
+    const { isLoggedIn, user, setUser } = useAuth();
     const navigate = useNavigate();
 
     const handleSignout = async () => {
-        // appel POST /auth/signout
+        ///auth/signout
         await api.post('/auth/signout');
-        // déconnecté(maj)
+        // déconnecté
         setUser(null);
-        //vers connexion
+        // vers login
         navigate('/login');
     };
+
     return (
         <nav style={styles.nav}>
+            {/* Logo */}
             <Link to="/">
                 <img src={logo} alt="Schedulift" style={styles.logo} />
             </Link>
 
             <div style={styles.links}>
+                {/* liens a tous */}
                 <Link to="/" style={styles.link}>Accueil</Link>
                 <Link to="/courses" style={styles.link}>Cours</Link>
                 <Link to="/contact" style={styles.link}>Contact</Link>
-                {/* affiche réservations et déconnexion */}
+
+                {/* réservations — client seulement */}
+                {user?.role === 'client' && (
+                    <Link to="/reservations" style={styles.link}>Mes réservations</Link>
+                )}
+
+                {/* lien gérer utilisateurs — admin seulement */}
+                {user?.role === 'admin' && (
+                    <Link to="/admin/users" style={styles.link}>Utilisateurs</Link>
+                )}
+
+                {/* si connecté — bouton déconnexion */}
                 {isLoggedIn ? (
-                    <>
-                        <Link to="/reservations" style={styles.link}>Mes réservations</Link>
-                        <button onClick={handleSignout} style={styles.buttonSignout}>
-                            Déconnexion
-                        </button>
-                    </>
+                    <button onClick={handleSignout} style={styles.buttonSignout}>
+                        Déconnexion
+                    </button>
                 ) : (
-                    /* afficher connexion et inscription */
+                    /* si non connecté — connexion et inscription */
                     <>
                         <Link to="/login" style={styles.buttonLogin}>Connexion</Link>
                         <Link to="/signup" style={styles.buttonSignup}>Inscription</Link>
@@ -42,9 +53,9 @@ function Navbar() {
                 )}
             </div>
         </nav>
-
     );
 }
+
 const styles: { [key: string]: React.CSSProperties } = {
     nav: {
         display: 'flex',

@@ -1,155 +1,147 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext'; 
 
-function HomePage() {
+
+function LoginPage() {
+    const navigate = useNavigate(); //redirection
+    const { setUser } = useAuth();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault(); //empeche rechargement
+        setError('');//reset error
+        
+        try{
+            const res = await api.post('/auth/signin', { email, password });
+            setUser(res.data);
+            navigate('/courses'); 
+
+        } catch (err) {
+            setError('Invalid email or password');
+        }
+    };
+
     return (
-        <div>
-            {/* Hero Section */}
-            <section style={styles.hero}>
-                <div style={styles.heroContent}>
-                    <h1 style={styles.heroTitle}>
-                        Bienvenue chez <span style={styles.accent}>Schedulift</span>
-                    </h1>
-                    <p style={styles.heroSubtitle}>
-                        Réservez vos cours de gym en ligne, gérez vos séances et atteignez vos objectifs.
-                    </p>
-                    <div style={styles.heroButtons}>
-                        <Link to="/courses" style={styles.btnPrimary}>Voir les cours</Link>
-                        <Link to="/signup" style={styles.btnSecondary}>S'inscrire gratuitement</Link>
-                    </div>
-                </div>
-            </section>
+        <div style={styles.container}>
+            <div style={styles.form}>
+                <h1 style={styles.title}>Connexion</h1>
 
-            {/* Section services — cohérent avec le seeder backend */}
-            <section style={styles.services}>
-                <h2 style={styles.sectionTitle}>Nos services</h2>
-                <div style={styles.cards}>
-                    <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Musculation — Poitrine</h3>
-                        <p style={styles.cardText}>Cours ciblé sur les pectoraux.</p>
-                    </div>
-                    <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Cardio Intensif</h3>
-                        <p style={styles.cardText}>Séance cardio pour brûler des calories.</p>
-                    </div>
-                    <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Yoga & Étirements</h3>
-                        <p style={styles.cardText}>Yoga axé sur le tronc et la flexibilité.</p>
-                    </div>
-                    <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Musculation — Dos</h3>
-                        <p style={styles.cardText}>Renforcement du dos et des lombaires.</p>
-                    </div>
-                    <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Pilates</h3>
-                        <p style={styles.cardText}>Pilates centré sur les jambes.</p>
-                    </div>
-                </div>
-            </section>
+                {/* lien page inscription */}
+                <p style={styles.subtitle}>
+                    Pas encore membre ? <Link to="/signup" style={styles.link}>S'inscrire</Link>
+                </p>
 
-            {/* Section CTA */}
-            <section style={styles.cta}>
-                <h2 style={styles.ctaTitle}>Prêt à commencer ?</h2>
-                <p style={styles.ctaText}>Rejoignez des centaines de membres et transformez votre corps.</p>
-                <Link to="/signup" style={styles.btnPrimary}>Créer un compte</Link>
-            </section>
+                {/* erreur  si elle existe */}
+                {error && <p style={styles.error}>{error}</p>}
+
+                <form onSubmit={handleSubmit}>
+                    <div style={styles.field}>
+                        <label style={styles.label}>Courriel</label>
+                        {/* à chaque frappe */}
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            style={styles.input}
+                            placeholder="exemple@email.com"
+                        />
+                    </div>
+
+                    <div style={styles.field}>
+                        <label style={styles.label}>Mot de passe</label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            style={styles.input}
+                            placeholder="Entrez votre mot de passe"
+                        />
+                    </div>
+
+                    <button type="submit" style={styles.button}>
+                        Se connecter
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
-    hero: {
-        backgroundColor: '#1a2f5e',
-        color: 'white',
-        padding: '5rem 2rem',
-        textAlign: 'center',
-    },
-    heroContent: {
-        maxWidth: '700px',
-        margin: '0 auto',
-    },
-    heroTitle: {
-        fontSize: '3rem',
-        fontWeight: 'bold',
-        marginBottom: '1rem',
-    },
-    accent: {
-        color: '#f47c20',
-    },
-    heroSubtitle: {
-        fontSize: '1.2rem',
-        marginBottom: '2rem',
-        opacity: 0.9,
-    },
-    heroButtons: {
+    container: {
+        minHeight: '100vh',
         display: 'flex',
-        gap: '1rem',
         justifyContent: 'center',
-    },
-    btnPrimary: {
-        backgroundColor: '#f47c20',
-        color: 'white',
-        padding: '0.75rem 2rem',
-        borderRadius: '4px',
-        textDecoration: 'none',
-        fontWeight: 'bold',
-        fontSize: '1rem',
-    },
-    btnSecondary: {
-        backgroundColor: 'transparent',
-        color: 'white',
-        padding: '0.75rem 2rem',
-        borderRadius: '4px',
-        textDecoration: 'none',
-        border: '2px solid white',
-        fontSize: '1rem',
-    },
-    services: {
-        padding: '4rem 2rem',
-        textAlign: 'center',
+        alignItems: 'center',
         backgroundColor: '#f9f9f9',
     },
-    sectionTitle: {
-        fontSize: '2rem',
-        color: '#1a2f5e',
-        marginBottom: '2rem',
-    },
-    cards: {
-        display: 'flex',
-        gap: '2rem',
-        justifyContent: 'center',
-        flexWrap: 'wrap',
-    },
-    card: {
+    form: {
         backgroundColor: 'white',
-        padding: '2rem',
+        padding: '2.5rem',
         borderRadius: '8px',
-        width: '200px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        width: '100%',
+        maxWidth: '400px',
     },
-    cardTitle: {
-        fontSize: '1.2rem',
+    title: {
         color: '#1a2f5e',
+        fontSize: '1.8rem',
         marginBottom: '0.5rem',
-    },
-    cardText: {
-        color: '#666',
-        fontSize: '0.95rem',
-    },
-    cta: {
-        backgroundColor: '#1a2f5e',
-        color: 'white',
-        padding: '4rem 2rem',
         textAlign: 'center',
     },
-    ctaTitle: {
-        fontSize: '2rem',
-        marginBottom: '1rem',
-    },
-    ctaText: {
-        fontSize: '1.1rem',
+    subtitle: {
+        textAlign: 'center',
+        color: '#666',
         marginBottom: '2rem',
-        opacity: 0.9,
+        fontSize: '0.95rem',
+    },
+    link: {
+        color: '#f47c20',
+        textDecoration: 'none',
+        fontWeight: 'bold',
+    },
+    error: {
+        backgroundColor: '#ffe0e0',
+        color: '#cc0000',
+        padding: '0.75rem',
+        borderRadius: '4px',
+        marginBottom: '1rem',
+        fontSize: '0.9rem',
+        textAlign: 'center',
+    },
+    field: {
+        marginBottom: '1.5rem',
+    },
+    label: {
+        display: 'block',
+        color: '#1a2f5e',
+        fontWeight: 'bold',
+        marginBottom: '0.5rem',
+        fontSize: '0.95rem',
+    },
+    input: {
+        width: '100%',
+        padding: '0.75rem',
+        borderRadius: '4px',
+        border: '1px solid #ddd',
+        fontSize: '1rem',
+        boxSizing: 'border-box',
+    },
+    button: {
+        width: '100%',
+        backgroundColor: '#f47c20',
+        color: 'white',
+        border: 'none',
+        padding: '0.75rem',
+        borderRadius: '4px',
+        fontSize: '1rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
     },
 };
-
-export default HomePage;
+export default LoginPage;
