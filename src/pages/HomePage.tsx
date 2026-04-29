@@ -73,8 +73,17 @@ function HomePage() {
                             <Link to="/admin/contact" style={styles.btnSecondary}>Voir les messages</Link>
                         </div>
                     </>
+                ) : user?.role === 'coach' ? (
+                    // coach → gérer les cours
+                    <>
+                        <h2 style={styles.ctaTitle}>Bon retour !</h2>
+                        <p style={styles.ctaText}>Gérez vos cours et créez de nouvelles séances.</p>
+                        <div style={styles.heroButtons}>
+                            <Link to="/courses" style={styles.btnPrimary}>Voir les cours</Link>
+                        </div>
+                    </>
                 ) : (
-                    // client/coach connecté → voir les cours
+                    // client connecté → voir les cours
                     <>
                         <h2 style={styles.ctaTitle}>Bon retour !</h2>
                         <p style={styles.ctaText}>Consultez les cours disponibles et réservez votre prochaine séance.</p>

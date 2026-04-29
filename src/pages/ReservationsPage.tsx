@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import { Link } from 'react-router-dom';
 
 interface Course {
     id: number;
@@ -23,6 +24,9 @@ function ReservationsPage() {
     const [error, setError] = useState('');
 
     useEffect(() => {
+        // coach — pas de réservations à afficher
+        if (user?.role === 'coach') return;
+
         // si admin — voir toutes les réservations
         // sinon — voir seulement les siennes
         const url = user?.role === 'admin' ? '/reservations' : '/reservations/user';
@@ -41,6 +45,23 @@ function ReservationsPage() {
             alert(err.response?.data?.message || 'Erreur lors de l\'annulation');
         }
     };
+
+    // coach — afficher message et redirection vers cours
+    if (user?.role === 'coach') {
+        return (
+            <div style={styles.container}>
+                <div style={styles.coachMessage}>
+                    <h1 style={styles.title}>Espace Coach</h1>
+                    <p style={styles.empty}>
+                        En tant que coach, vous gérez les cours plutôt que les réservations.
+                    </p>
+                    <Link to="/courses" style={styles.btnCours}>
+                        Gérer les cours
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={styles.container}>
@@ -107,6 +128,10 @@ const styles: { [key: string]: React.CSSProperties } = {
         backgroundColor: '#f9f9f9',
         minHeight: '80vh',
     },
+    coachMessage: {
+        textAlign: 'center',
+        marginTop: '5rem',
+    },
     title: {
         color: '#1a2f5e',
         fontSize: '2rem',
@@ -126,6 +151,16 @@ const styles: { [key: string]: React.CSSProperties } = {
         color: '#666',
         fontSize: '1rem',
         marginTop: '2rem',
+        marginBottom: '2rem',
+    },
+    btnCours: {
+        backgroundColor: '#f47c20',
+        color: 'white',
+        padding: '0.75rem 2rem',
+        borderRadius: '4px',
+        textDecoration: 'none',
+        fontWeight: 'bold',
+        fontSize: '1rem',
     },
     grid: {
         display: 'flex',
