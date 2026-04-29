@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function HomePage() {
+    const { isLoggedIn, user } = useAuth();
+
     return (
         <div>
             {/* Hero Section */}
@@ -14,7 +17,10 @@ function HomePage() {
                     </p>
                     <div style={styles.heroButtons}>
                         <Link to="/courses" style={styles.btnPrimary}>Voir les cours</Link>
-                        <Link to="/signup" style={styles.btnSecondary}>S'inscrire gratuitement</Link>
+                        {/* bouton inscription visible seulement si non connecté */}
+                        {!isLoggedIn && (
+                            <Link to="/signup" style={styles.btnSecondary}>S'inscrire gratuitement</Link>
+                        )}
                     </div>
                 </div>
             </section>
@@ -46,11 +52,35 @@ function HomePage() {
                 </div>
             </section>
 
-            {/* Section CTA */}
+            {/* Section CTA — différente selon connexion */}
             <section style={styles.cta}>
-                <h2 style={styles.ctaTitle}>Prêt à commencer ?</h2>
-                <p style={styles.ctaText}>Rejoignez des centaines de membres et transformez votre corps.</p>
-                <Link to="/signup" style={styles.btnPrimary}>Créer un compte</Link>
+                {!isLoggedIn ? (
+                    // non connecté → s'inscrire
+                    <>
+                        <h2 style={styles.ctaTitle}>Prêt à commencer ?</h2>
+                        <p style={styles.ctaText}>Rejoignez des centaines de membres et transformez votre corps.</p>
+                        <Link to="/signup" style={styles.btnPrimary}>Créer un compte</Link>
+                    </>
+                ) : user?.role === 'admin' ? (
+                    // admin → tableau de bord
+                    <>
+                        <h2 style={styles.ctaTitle}>Tableau de bord Admin</h2>
+                        <p style={styles.ctaText}>Gérez les cours, les utilisateurs et les messages.</p>
+                        <div style={styles.heroButtons}>
+                            <Link to="/courses" style={styles.btnPrimary}>Gérer les cours</Link>
+                            <Link to="/admin/users" style={styles.btnSecondary}>Gérer les utilisateurs</Link>
+                            <Link to="/admin/reservations" style={styles.btnSecondary}>Voir les réservations</Link>
+                            <Link to="/admin/contact" style={styles.btnSecondary}>Voir les messages</Link>
+                        </div>
+                    </>
+                ) : (
+                    // client/coach connecté → voir les cours
+                    <>
+                        <h2 style={styles.ctaTitle}>Bon retour !</h2>
+                        <p style={styles.ctaText}>Consultez les cours disponibles et réservez votre prochaine séance.</p>
+                        <Link to="/courses" style={styles.btnPrimary}>Voir les cours</Link>
+                    </>
+                )}
             </section>
         </div>
     );
@@ -84,6 +114,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'flex',
         gap: '1rem',
         justifyContent: 'center',
+        flexWrap: 'wrap',
     },
     btnPrimary: {
         backgroundColor: '#f47c20',

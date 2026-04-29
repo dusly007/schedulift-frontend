@@ -1,36 +1,39 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 interface Course {
     id: number;
     title: string;
     description: string;
-    capacity: number;
-    isActive: boolean;
     gifUrl: string;
 }
 
 interface Reservation {
     id: number;
+    userId: number;
     courseId: number;
     createdAt: string;
-    course: Course; 
+    course: Course;
 }
 
 function ReservationsPage() {
+    const { user } = useAuth();
     const [reservations, setReservations] = useState<Reservation[]>([]);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        
-        api.get('/reservations/user')
+        // si admin — voir toutes les réservations
+        // sinon — voir seulement les siennes
+        const url = user?.role === 'admin' ? '/reservations' : '/reservations/user';
+        api.get(url)
             .then(res => setReservations(res.data))
             .catch(() => setError('Erreur lors du chargement des réservations'));
-    }, []);
+    }, [user?.role]);
 
     const handleCancel = async (id: number) => {
         try {
-            // DELETE
+            // appel DELETE /reservations/:id
             await api.delete(`/reservations/${id}`);
             // retirer la réservation de la liste sans recharger
             setReservations(reservations.filter(r => r.id !== id));
@@ -41,43 +44,55 @@ function ReservationsPage() {
 
     return (
         <div style={styles.container}>
-            <h1 style={styles.title}>Mes réservations</h1>
+            {/* titre différent selon le rôle */}
+            <h1 style={styles.title}>
+                {user?.role === 'admin' ? 'Toutes les réservations' : 'Mes réservations'}
+            </h1>
 
+            {/* message d'erreur */}
             {error && <p style={styles.error}>{error}</p>}
 
-            {/* si aucune réservation */}
+            {/* message si aucune réservation */}
             {reservations.length === 0 && !error && (
-                <p style={styles.empty}>Vous n'avez aucune réservation pour le moment.</p>
+                <p style={styles.empty}>Aucune réservation pour le moment.</p>
             )}
 
             <div style={styles.grid}>
                 {reservations.map(reservation => (
                     <div key={reservation.id} style={styles.card}>
+
                         {/* image du cours */}
-                        {reservation.course.gifUrl && (
+                        {reservation.course?.gifUrl && (
                             <img
                                 src={reservation.course.gifUrl}
-                                alt={reservation.course.title}
+                                alt={reservation.course?.title}
                                 style={styles.gif}
                             />
                         )}
 
                         <div style={styles.cardBody}>
-                            <h3 style={styles.cardTitle}>{reservation.course.title}</h3>
-                            <p style={styles.cardText}>{reservation.course.description}</p>
+                            <h3 style={styles.cardTitle}>{reservation.course?.title}</h3>
+                            <p style={styles.cardText}>{reservation.course?.description}</p>
+
+                            {/* afficher userId si admin */}
+                            {user?.role === 'admin' && (
+                                <p style={styles.infoItem}>Utilisateur #{reservation.userId}</p>
+                            )}
 
                             {/* date de réservation */}
                             <p style={styles.date}>
                                 Réservé le : {new Date(reservation.createdAt).toLocaleDateString('fr-CA')}
                             </p>
 
-                            {/* bouton annuler */}
-                            <button
-                                onClick={() => handleCancel(reservation.id)}
-                                style={styles.btnCancel}
-                            >
-                                Annuler la réservation
-                            </button>
+                            {/* bouton annuler — client seulement */}
+                            {user?.role !== 'admin' && (
+                                <button
+                                    onClick={() => handleCancel(reservation.id)}
+                                    style={styles.btnCancel}
+                                >
+                                    Annuler la réservation
+                                </button>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -142,6 +157,12 @@ const styles: { [key: string]: React.CSSProperties } = {
         color: '#666',
         fontSize: '0.9rem',
         marginBottom: '0.75rem',
+    },
+    infoItem: {
+        color: '#1a2f5e',
+        fontSize: '0.85rem',
+        fontWeight: 'bold',
+        marginBottom: '0.5rem',
     },
     date: {
         color: '#1a2f5e',
