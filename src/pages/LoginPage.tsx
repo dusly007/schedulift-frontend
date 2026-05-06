@@ -1,16 +1,18 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext'; 
 
-
 function LoginPage() {
-    const navigate = useNavigate(); //redirection
+    const navigate = useNavigate();
     const { setUser } = useAuth();
+    const [searchParams] = useSearchParams();
+    // récupérer la page d'origine si présente dans l'URL
+    const redirect = searchParams.get('redirect') || '/';
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault(); //empeche rechargement
@@ -19,7 +21,8 @@ function LoginPage() {
         try{
             const res = await api.post('/auth/signin', { email, password });
             setUser(res.data);
-            navigate('/courses'); 
+            // rediriger vers la page d'origine après connexion
+            navigate(redirect); 
 
         } catch (err) {
             setError('Invalid email or password');
@@ -36,7 +39,7 @@ function LoginPage() {
                     Pas encore membre ? <Link to="/signup" style={styles.link}>S'inscrire</Link>
                 </p>
 
-                {/* erreur  si elle existe */}
+                {/* erreur si elle existe */}
                 {error && <p style={styles.error}>{error}</p>}
 
                 <form onSubmit={handleSubmit}>
@@ -144,4 +147,5 @@ const styles: { [key: string]: React.CSSProperties } = {
         cursor: 'pointer',
     },
 };
+
 export default LoginPage;
