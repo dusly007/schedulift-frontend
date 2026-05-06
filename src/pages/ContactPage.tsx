@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
@@ -13,7 +13,7 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3005/contact', form, { withCredentials: true });
+      await api.post('/contact', form);
       setStatus('Message envoyé avec succès !');
       setForm({ name: '', email: '', message: '' });
     } catch (err) {

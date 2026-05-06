@@ -9,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ReservationsPage from './pages/ReservationsPage';
 import ServicesPage from './pages/ServicePage';
 import GroupesPage from './pages/GroupePage';
+import AdminUsersPage from './pages/AdminUsersPage';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/courses" element={<CoursesPage />} />
             <Route path="/groupes" element={<GroupesPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
 
             {/* Accessible seulement si connecté */}
             <Route path="/reservations" element={
