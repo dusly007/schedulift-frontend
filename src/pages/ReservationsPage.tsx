@@ -3,19 +3,22 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Link } from 'react-router-dom';
 
-interface Course {
+interface Groupe {
     id: number;
-    title: string;
-    description: string;
-    gifUrl: string;
+    nom: string;
+    horaire: string;
+    dateDebut: string;
+    dateFin: string;
+    dureeEnSemaines: number;
+    coachName: string;
 }
 
 interface Reservation {
     id: number;
     userId: number;
-    courseId: number;
+    groupeId: number;
     createdAt: string;
-    course: Course;
+    groupe: Groupe;
 }
 
 function ReservationsPage() {
@@ -55,7 +58,7 @@ function ReservationsPage() {
                     <p style={styles.empty}>
                         En tant que coach, vous gérez les cours plutôt que les réservations.
                     </p>
-                    <Link to="/courses" style={styles.btnCours}>
+                    <Link to="/services" style={styles.btnCours}>
                         Gérer les cours
                     </Link>
                 </div>
@@ -81,23 +84,33 @@ function ReservationsPage() {
             <div style={styles.grid}>
                 {reservations.map(reservation => (
                     <div key={reservation.id} style={styles.card}>
-
-                        {/* image du cours */}
-                        {reservation.course?.gifUrl && (
-                            <img
-                                src={reservation.course.gifUrl}
-                                alt={reservation.course?.title}
-                                style={styles.gif}
-                            />
-                        )}
-
                         <div style={styles.cardBody}>
-                            <h3 style={styles.cardTitle}>{reservation.course?.title}</h3>
-                            <p style={styles.cardText}>{reservation.course?.description}</p>
+                            {/* nom du groupe */}
+                            <h3 style={styles.cardTitle}>
+                                {reservation.groupe?.nom || `Groupe #${reservation.groupeId}`}
+                            </h3>
+
+                            {/* infos du groupe */}
+                            <div style={styles.cardInfo}>
+                                {reservation.groupe?.horaire && (
+                                    <p style={styles.infoItem}>📅 {reservation.groupe.horaire}</p>
+                                )}
+                                {reservation.groupe?.dateDebut && (
+                                    <p style={styles.infoItem}>
+                                        Du {new Date(reservation.groupe.dateDebut).toLocaleDateString('fr-CA')} au {new Date(reservation.groupe.dateFin).toLocaleDateString('fr-CA')}
+                                    </p>
+                                )}
+                                {reservation.groupe?.dureeEnSemaines && (
+                                    <p style={styles.infoItem}>⏱ {reservation.groupe.dureeEnSemaines} semaines</p>
+                                )}
+                                {reservation.groupe?.coachName && (
+                                    <p style={styles.infoItem}>Coach : {reservation.groupe.coachName}</p>
+                                )}
+                            </div>
 
                             {/* afficher userId si admin */}
                             {user?.role === 'admin' && (
-                                <p style={styles.infoItem}>Utilisateur #{reservation.userId}</p>
+                                <p style={styles.adminInfo}>Utilisateur #{reservation.userId}</p>
                             )}
 
                             {/* date de réservation */}
@@ -172,13 +185,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         backgroundColor: 'white',
         borderRadius: '8px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        width: '300px',
+        width: '320px',
         overflow: 'hidden',
-    },
-    gif: {
-        width: '100%',
-        height: '200px',
-        objectFit: 'cover',
     },
     cardBody: {
         padding: '1.5rem',
@@ -186,23 +194,26 @@ const styles: { [key: string]: React.CSSProperties } = {
     cardTitle: {
         color: '#1a2f5e',
         fontSize: '1.1rem',
-        marginBottom: '0.5rem',
+        marginBottom: '1rem',
     },
-    cardText: {
-        color: '#666',
-        fontSize: '0.9rem',
-        marginBottom: '0.75rem',
+    cardInfo: {
+        marginBottom: '1rem',
     },
     infoItem: {
         color: '#1a2f5e',
+        fontSize: '0.85rem',
+        fontWeight: '500',
+        margin: '0.3rem 0',
+    },
+    adminInfo: {
+        color: '#666',
         fontSize: '0.85rem',
         fontWeight: 'bold',
         marginBottom: '0.5rem',
     },
     date: {
-        color: '#1a2f5e',
-        fontSize: '0.85rem',
-        fontWeight: '500',
+        color: '#999',
+        fontSize: '0.8rem',
         marginBottom: '1rem',
     },
     btnCancel: {

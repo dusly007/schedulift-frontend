@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../services/api';
-import CourseCard from '../components/CourseCard';
 
 interface Course {
     id: number;
@@ -12,11 +12,23 @@ interface Course {
     gifUrl: string;
     coachName: string;
     bodyPart: string;
+    niveau: string;
+    serviceId: number;
+}
+
+interface Service {
+    id: number;
+    nom: string;
 }
 
 function CoursesPage() {
     const { user } = useAuth();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const serviceId = searchParams.get('serviceId');
+
     const [courses, setCourses] = useState<Course[]>([]);
+    const [service, setService] = useState<Service | null>(null);
     const [error, setError] = useState('');
     // afficher ou cacher le modal
     const [showModal, setShowModal] = useState(false);
@@ -25,13 +37,45 @@ function CoursesPage() {
     const [newDescription, setNewDescription] = useState('');
     const [newCapacity, setNewCapacity] = useState('');
     const [newBodyPart, setNewBodyPart] = useState('');
+    const [newNiveau, setNewNiveau] = useState('');
+    // états pour édition cours
+    const [editingCourseId, setEditingCourseId] = useState<number | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+    const [editDescription, setEditDescription] = useState('');
+    const [editCapacity, setEditCapacity] = useState('');
 
     useEffect(() => {
+        // charger les infos du service si serviceId présent
+        if (serviceId) {
+            api.get(`/services/${serviceId}`)
+                .then(res => setService(res.data))
+                .catch(() => setError('Service non trouvé'));
+        }
+
         // appel GET /courses au chargement de la page
         api.get('/courses')
-            .then(res => setCourses(res.data))
+            .then(res => {
+                const allCourses = res.data;
+                // filtrer par serviceId si présent
+                if (serviceId) {
+                    setCourses(allCourses.filter((c: Course) => c.serviceId === parseInt(serviceId)));
+                } else {
+                    setCourses(allCourses);
+                }
+            })
             .catch(() => setError('Erreur lors du chargement des cours'));
-    }, []);
+    }, [serviceId]);
+
+    // recharger les cours
+    const rechargerCours = async () => {
+        const res = await api.get('/courses');
+        const allCourses = res.data;
+        if (serviceId) {
+            setCourses(allCourses.filter((c: Course) => c.serviceId === parseInt(serviceId)));
+        } else {
+            setCourses(allCourses);
+        }
+    };
 
     // créer un cours — coach ou admin
     const handleCreateCourse = async (e: React.FormEvent) => {
@@ -42,6 +86,8 @@ function CoursesPage() {
                 description: newDescription,
                 capacity: parseInt(newCapacity),
                 bodyPart: newBodyPart,
+                niveau: newNiveau,
+                serviceId: serviceId ? parseInt(serviceId) : undefined,
             });
             // fermer modal et reset champs
             setShowModal(false);
@@ -49,19 +95,75 @@ function CoursesPage() {
             setNewDescription('');
             setNewCapacity('');
             setNewBodyPart('');
+            setNewNiveau('');
             // recharger la liste des cours
-            const res = await api.get('/courses');
-            setCourses(res.data);
+            await rechargerCours();
             alert(user?.role === 'coach' ? 'Cours créé — en attente de validation admin !' : 'Cours créé avec succès !');
         } catch (err: any) {
             alert(err.response?.data?.message || 'Erreur lors de la création');
         }
     };
 
+    // ouvrir mode édition
+    const handleEditCourse = (course: Course) => {
+        setEditingCourseId(course.id);
+        setEditTitle(course.title);
+        setEditDescription(course.description);
+        setEditCapacity(String(course.capacity));
+    };
+
+    // sauvegarder modifications cours
+    const handleSaveCourse = async (id: number) => {
+        try {
+            await api.patch(`/courses/${id}`, {
+                title: editTitle,
+                description: editDescription,
+                capacity: parseInt(editCapacity),
+            });
+            setEditingCourseId(null);
+            // recharger les cours
+            await rechargerCours();
+            alert('Cours modifié avec succès !');
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Erreur lors de la modification');
+        }
+    };
+
+    // activer ou désactiver un cours — admin seulement
+    const handleToggleCourse = async (id: number) => {
+        try {
+            await api.patch(`/courses/${id}/toggle`);
+            // mettre à jour localement
+            setCourses(courses.map(c =>
+                c.id === id ? { ...c, isActive: !c.isActive } : c
+            ));
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Erreur');
+        }
+    };
+
+    // supprimer un cours — coach ou admin
+    const handleDeleteCourse = async (id: number) => {
+        if (!confirm('Voulez-vous vraiment supprimer ce cours ?')) return;
+        try {
+            await api.delete(`/courses/${id}`);
+            setCourses(courses.filter(c => c.id !== id));
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Erreur lors de la suppression');
+        }
+    };
+
     return (
         <div style={styles.container}>
-            <h1 style={styles.title}>Nos cours</h1>
-            <p style={styles.subtitle}>Réservez votre prochaine séance</p>
+            {/* breadcrumb — retour aux services */}
+            <div style={styles.breadcrumb}>
+                <Link to="/services" style={styles.breadcrumbLink}>← Retour aux services</Link>
+            </div>
+
+            <h1 style={styles.title}>
+                {service ? `Cours — ${service.nom}` : 'Nos cours'}
+            </h1>
+            <p style={styles.subtitle}>Choisissez un cours pour voir les groupes disponibles</p>
 
             {/* bouton créer un cours — coach et admin seulement */}
             {(user?.role === 'coach' || user?.role === 'admin') && (
@@ -118,6 +220,19 @@ function CoursesPage() {
                                     placeholder="ex: chest, cardio, back..."
                                 />
                             </div>
+                            <div style={styles.field}>
+                                <label style={styles.label}>Niveau</label>
+                                <select
+                                    value={newNiveau}
+                                    onChange={e => setNewNiveau(e.target.value)}
+                                    style={styles.input}
+                                >
+                                    <option value="">Sélectionner un niveau</option>
+                                    <option value="débutant">Débutant</option>
+                                    <option value="intermédiaire">Intermédiaire</option>
+                                    <option value="avancé">Avancé</option>
+                                </select>
+                            </div>
 
                             {/* message pour coach — cours en attente de validation */}
                             {user?.role === 'coach' && (
@@ -151,13 +266,141 @@ function CoursesPage() {
             {/* afficher les cours */}
             <div style={styles.grid}>
                 {courses.map(course => (
-                    <CourseCard key={course.id} course={course} />
+                    <div key={course.id} style={styles.card}>
+                        {/* image du cours — clic vers groupes */}
+                        {course.gifUrl && (
+                            <img
+                                src={course.gifUrl}
+                                alt={course.title}
+                                style={styles.gif}
+                                onClick={() => navigate(`/groupes?courseId=${course.id}`)}
+                            />
+                        )}
+
+                        <div style={styles.cardBody}>
+                            {/* mode édition — coach et admin */}
+                            {editingCourseId === course.id ? (
+                                <div>
+                                    <input
+                                        value={editTitle}
+                                        onChange={e => setEditTitle(e.target.value)}
+                                        style={styles.input}
+                                        placeholder="Titre"
+                                    />
+                                    <input
+                                        value={editDescription}
+                                        onChange={e => setEditDescription(e.target.value)}
+                                        style={styles.input}
+                                        placeholder="Description"
+                                    />
+                                    <input
+                                        type="number"
+                                        value={editCapacity}
+                                        onChange={e => setEditCapacity(e.target.value)}
+                                        style={styles.input}
+                                        placeholder="Capacité"
+                                    />
+                                    <div style={styles.modalButtons}>
+                                        {/* sauvegarder */}
+                                        <button onClick={() => handleSaveCourse(course.id)} style={styles.btnSubmit}>
+                                            Sauvegarder
+                                        </button>
+                                        {/* annuler édition */}
+                                        <button onClick={() => setEditingCourseId(null)} style={styles.btnCancel}>
+                                            Annuler
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* titre + badge disponibilité */}
+                                    <div
+                                        style={styles.cardHeader}
+                                        onClick={() => navigate(`/groupes?courseId=${course.id}`)}
+                                    >
+                                        <h3 style={styles.cardTitle}>{course.title}</h3>
+                                        <span style={course.isActive ? styles.badgeActive : styles.badgeInactive}>
+                                            {course.isActive ? 'Disponible' : 'Indisponible'}
+                                        </span>
+                                    </div>
+
+                                    <p
+                                        style={styles.cardText}
+                                        onClick={() => navigate(`/groupes?courseId=${course.id}`)}
+                                    >
+                                        {course.description}
+                                    </p>
+
+                                    {/* infos du cours */}
+                                    <div style={styles.cardInfo}>
+                                        {course.niveau && (
+                                            <span style={styles.infoItem}>Niveau : {course.niveau}</span>
+                                        )}
+                                        {course.bodyPart && (
+                                            <span style={styles.infoItem}>Zone : {course.bodyPart}</span>
+                                        )}
+                                        {course.coachName && (
+                                            <span style={styles.infoItem}>Coach : {course.coachName}</span>
+                                        )}
+                                    </div>
+
+                                    {/* boutons admin */}
+                                    {user?.role === 'admin' && (
+                                        <div>
+                                            {/* première rangée — activer/désactiver + modifier */}
+                                            <div style={{ ...styles.modalButtons, marginBottom: '0.5rem' }}>
+                                                <button
+                                                    onClick={() => handleToggleCourse(course.id)}
+                                                    style={course.isActive ? styles.btnDesactiver : styles.btnActiver}
+                                                >
+                                                    {course.isActive ? 'Désactiver' : 'Activer'}
+                                                </button>
+                                                <button onClick={() => handleEditCourse(course)} style={styles.btnWaitlist}>
+                                                    Modifier
+                                                </button>
+                                            </div>
+                                            {/* deuxième rangée — supprimer */}
+                                            <div style={styles.modalButtons}>
+                                                <button onClick={() => handleDeleteCourse(course.id)} style={styles.btnDelete}>
+                                                    Supprimer
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* boutons coach */}
+                                    {user?.role === 'coach' && (
+                                        <div style={styles.modalButtons}>
+                                            {/* modifier */}
+                                            <button onClick={() => handleEditCourse(course)} style={styles.btnWaitlist}>
+                                                Modifier
+                                            </button>
+                                            {/* supprimer */}
+                                            <button onClick={() => handleDeleteCourse(course.id)} style={styles.btnDelete}>
+                                                Supprimer
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* bouton voir les groupes — visiteur et client */}
+                                    {(!user || user?.role === 'client') && (
+                                        <button
+                                            onClick={() => navigate(`/groupes?courseId=${course.id}`)}
+                                            style={styles.btnVoir}
+                                        >
+                                            Voir les groupes →
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
                 ))}
             </div>
 
             {/* message si aucun cours */}
             {courses.length === 0 && !error && (
-                <p style={styles.empty}>Aucun cours disponible pour le moment.</p>
+                <p style={styles.empty}>Aucun cours disponible pour ce service.</p>
             )}
         </div>
     );
@@ -168,6 +411,14 @@ const styles: { [key: string]: React.CSSProperties } = {
         padding: '3rem 2rem',
         backgroundColor: '#f9f9f9',
         minHeight: '80vh',
+    },
+    breadcrumb: {
+        marginBottom: '1rem',
+    },
+    breadcrumbLink: {
+        color: '#1a2f5e',
+        textDecoration: 'none',
+        fontSize: '0.9rem',
     },
     title: {
         color: '#1a2f5e',
@@ -240,6 +491,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         border: '1px solid #ddd',
         fontSize: '1rem',
         boxSizing: 'border-box',
+        marginBottom: '0.75rem',
     },
     infoMsg: {
         color: '#f47c20',
@@ -251,7 +503,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     modalButtons: {
         display: 'flex',
         gap: '0.5rem',
-        marginTop: '1rem',
+        marginTop: '0.5rem',
     },
     btnSubmit: {
         flex: 1,
@@ -274,6 +526,49 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '1rem',
         cursor: 'pointer',
     },
+    btnWaitlist: {
+        flex: 1,
+        backgroundColor: 'transparent',
+        color: '#1a2f5e',
+        border: '1px solid #1a2f5e',
+        padding: '0.75rem',
+        borderRadius: '4px',
+        fontSize: '0.95rem',
+        cursor: 'pointer',
+    },
+    btnActiver: {
+        flex: 1,
+        backgroundColor: '#2d7a3a',
+        color: 'white',
+        border: 'none',
+        padding: '0.75rem',
+        borderRadius: '4px',
+        fontSize: '0.95rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+    },
+    btnDesactiver: {
+        flex: 1,
+        backgroundColor: '#f47c20',
+        color: 'white',
+        border: 'none',
+        padding: '0.75rem',
+        borderRadius: '4px',
+        fontSize: '0.95rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+    },
+    btnDelete: {
+        flex: 1,
+        backgroundColor: '#cc0000',
+        color: 'white',
+        border: 'none',
+        padding: '0.75rem',
+        borderRadius: '4px',
+        fontSize: '0.95rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+    },
     error: {
         backgroundColor: '#ffe0e0',
         color: '#cc0000',
@@ -287,6 +582,78 @@ const styles: { [key: string]: React.CSSProperties } = {
         flexWrap: 'wrap',
         gap: '2rem',
         justifyContent: 'center',
+    },
+    card: {
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        width: '300px',
+        overflow: 'hidden',
+    },
+    gif: {
+        width: '100%',
+        height: '200px',
+        objectFit: 'cover',
+        cursor: 'pointer',
+    },
+    cardBody: {
+        padding: '1.5rem',
+    },
+    cardHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '0.75rem',
+        cursor: 'pointer',
+    },
+    cardTitle: {
+        color: '#1a2f5e',
+        fontSize: '1.1rem',
+        margin: 0,
+    },
+    badgeActive: {
+        backgroundColor: '#e6f4ea',
+        color: '#2d7a3a',
+        padding: '0.2rem 0.6rem',
+        borderRadius: '20px',
+        fontSize: '0.8rem',
+        fontWeight: 'bold',
+    },
+    badgeInactive: {
+        backgroundColor: '#ffe0e0',
+        color: '#cc0000',
+        padding: '0.2rem 0.6rem',
+        borderRadius: '20px',
+        fontSize: '0.8rem',
+        fontWeight: 'bold',
+    },
+    cardText: {
+        color: '#666',
+        fontSize: '0.9rem',
+        marginBottom: '1rem',
+        cursor: 'pointer',
+    },
+    cardInfo: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.3rem',
+        marginBottom: '1rem',
+    },
+    infoItem: {
+        color: '#1a2f5e',
+        fontSize: '0.85rem',
+        fontWeight: '500',
+    },
+    btnVoir: {
+        width: '100%',
+        backgroundColor: '#f47c20',
+        color: 'white',
+        border: 'none',
+        padding: '0.75rem',
+        borderRadius: '4px',
+        fontSize: '0.95rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
     },
     empty: {
         textAlign: 'center',

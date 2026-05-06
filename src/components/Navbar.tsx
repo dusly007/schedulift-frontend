@@ -24,9 +24,9 @@ function Navbar() {
             </Link>
 
             <div style={styles.links}>
-                {/* liens a tous */}
+                {/* liens accessibles à tous */}
                 <Link to="/" style={styles.link}>Accueil</Link>
-                <Link to="/courses" style={styles.link}>Cours</Link>
+                <Link to="/services" style={styles.link}>Services</Link>
                 <Link to="/contact" style={styles.link}>Contact</Link>
 
                 {/* réservations — client seulement */}

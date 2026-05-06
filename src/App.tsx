@@ -7,6 +7,8 @@ import CoursesPage from './pages/CoursePage';
 import ContactPage from './pages/ContactPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import ReservationsPage from './pages/ReservationsPage';
+import ServicesPage from './pages/ServicePage';
+import GroupesPage from './pages/GroupePage';
 
 function App() {
   return (
@@ -19,7 +21,9 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/services" element={<ServicesPage />} />
             <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/groupes" element={<GroupesPage />} />
             <Route path="/contact" element={<ContactPage />} />
 
             {/* Accessible seulement si connecté */}

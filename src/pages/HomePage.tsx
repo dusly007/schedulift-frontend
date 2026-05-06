@@ -16,7 +16,8 @@ function HomePage() {
                         Réservez vos cours de gym en ligne, gérez vos séances et atteignez vos objectifs.
                     </p>
                     <div style={styles.heroButtons}>
-                        <Link to="/courses" style={styles.btnPrimary}>Voir les cours</Link>
+                        {/* bouton voir les services — accessible à tous */}
+                        <Link to="/services" style={styles.btnPrimary}>Voir les services</Link>
                         {/* bouton inscription visible seulement si non connecté */}
                         {!isLoggedIn && (
                             <Link to="/signup" style={styles.btnSecondary}>S'inscrire gratuitement</Link>
@@ -30,24 +31,20 @@ function HomePage() {
                 <h2 style={styles.sectionTitle}>Nos services</h2>
                 <div style={styles.cards}>
                     <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Musculation — Poitrine</h3>
-                        <p style={styles.cardText}>Cours ciblé sur les pectoraux.</p>
+                        <h3 style={styles.cardTitle}>Musculation</h3>
+                        <p style={styles.cardText}>Cours de renforcement musculaire pour tous les niveaux.</p>
                     </div>
                     <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Cardio Intensif</h3>
-                        <p style={styles.cardText}>Séance cardio pour brûler des calories.</p>
+                        <h3 style={styles.cardTitle}>Cardio</h3>
+                        <p style={styles.cardText}>Cours d'endurance et de condition physique.</p>
                     </div>
                     <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Yoga & Étirements</h3>
-                        <p style={styles.cardText}>Yoga axé sur le tronc et la flexibilité.</p>
+                        <h3 style={styles.cardTitle}>Yoga & Bien-être</h3>
+                        <p style={styles.cardText}>Cours axés sur la flexibilité et la relaxation.</p>
                     </div>
                     <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Musculation — Dos</h3>
-                        <p style={styles.cardText}>Renforcement du dos et des lombaires.</p>
-                    </div>
-                    <div style={styles.card}>
-                        <h3 style={styles.cardTitle}>Pilates</h3>
-                        <p style={styles.cardText}>Pilates centré sur les jambes.</p>
+                        <h3 style={styles.cardTitle}>Cours collectifs</h3>
+                        <p style={styles.cardText}>Pilates et cours en groupe pour tous.</p>
                     </div>
                 </div>
             </section>
@@ -65,12 +62,12 @@ function HomePage() {
                     // admin → tableau de bord
                     <>
                         <h2 style={styles.ctaTitle}>Tableau de bord Admin</h2>
-                        <p style={styles.ctaText}>Gérez les cours, les utilisateurs et les messages.</p>
+                        <p style={styles.ctaText}>Gérez les services, les utilisateurs et les messages.</p>
                         <div style={styles.heroButtons}>
-                            <Link to="/courses" style={styles.btnPrimary}>Gérer les cours</Link>
+                            <Link to="/services" style={styles.btnPrimary}>Gérer les services</Link>
                             <Link to="/admin/users" style={styles.btnSecondary}>Gérer les utilisateurs</Link>
-                            <Link to="/admin/reservations" style={styles.btnSecondary}>Voir les réservations</Link>
-                            <Link to="/admin/contact" style={styles.btnSecondary}>Voir les messages</Link>
+                            <Link to="/reservations" style={styles.btnSecondary}>Voir les réservations</Link>
+                            <Link to="/contact" style={styles.btnSecondary}>Voir les messages</Link>
                         </div>
                     </>
                 ) : user?.role === 'coach' ? (
@@ -79,15 +76,15 @@ function HomePage() {
                         <h2 style={styles.ctaTitle}>Bon retour !</h2>
                         <p style={styles.ctaText}>Gérez vos cours et créez de nouvelles séances.</p>
                         <div style={styles.heroButtons}>
-                            <Link to="/courses" style={styles.btnPrimary}>Voir les cours</Link>
+                            <Link to="/services" style={styles.btnPrimary}>Voir les services</Link>
                         </div>
                     </>
                 ) : (
-                    // client connecté → voir les cours
+                    // client connecté → voir les services
                     <>
                         <h2 style={styles.ctaTitle}>Bon retour !</h2>
-                        <p style={styles.ctaText}>Consultez les cours disponibles et réservez votre prochaine séance.</p>
-                        <Link to="/courses" style={styles.btnPrimary}>Voir les cours</Link>
+                        <p style={styles.ctaText}>Consultez les services disponibles et réservez votre prochaine séance.</p>
+                        <Link to="/services" style={styles.btnPrimary}>Voir les services</Link>
                     </>
                 )}
             </section>
