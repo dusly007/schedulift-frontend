@@ -11,6 +11,9 @@ import ServicesPage from './pages/ServicePage';
 import GroupesPage from './pages/GroupePage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminMessagesPage from './pages/AdminMessagesPage';
+import GestionCoursPage from './pages/GestionCoursPage';
+import GestionGroupesPage from './pages/GestionGroupePage';
+import GestionServicesPage from './pages/GestionServicePage';
 
 function App() {
   return (
@@ -35,6 +38,27 @@ function App() {
               <ProtectedRoute>
                 <ReservationsPage />
               </ProtectedRoute>
+            } />
+
+
+            {/* coach et admin */}
+            <Route path="/gestion/cours" element={
+              <ProtectedRoute>
+                <GestionCoursPage />
+              </ProtectedRoute>
+            } />
+
+
+            <Route path="/gestion/groupes" element={
+              <ProtectedRoute>
+                <GestionGroupesPage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/gestion/services" element={
+              <ProtectedRoute>
+                <GestionServicesPage />
+            </ProtectedRoute>
             } />
           </Routes>
         </div>

@@ -26,12 +26,22 @@ function Navbar() {
             <div style={styles.links}>
                 {/* liens accessibles à tous */}
                 <Link to="/" style={styles.link}>Accueil</Link>
-                <Link to="/services" style={styles.link}>Services</Link>
+
+                {/* services — visiteur et client seulement */}
+                {(!user || user?.role === 'client') && (
+                    <Link to="/services" style={styles.link}>Services</Link>
+                )}
+
                 <Link to="/contact" style={styles.link}>Contact</Link>
 
                 {/* réservations — client seulement */}
                 {user?.role === 'client' && (
                     <Link to="/reservations" style={styles.link}>Mes réservations</Link>
+                )}
+
+                {/* lien gestion — coach et admin seulement */}
+                {(user?.role === 'coach' || user?.role === 'admin') && (
+                    <Link to="/gestion/services" style={styles.link}>Gestion</Link>
                 )}
 
                 {/* lien gérer utilisateurs — admin seulement */}
@@ -48,7 +58,6 @@ function Navbar() {
                     /* si non connecté — connexion et inscription */
                     <>
                         <Link to="/login" style={styles.buttonLogin}>Connexion</Link>
-                        <Link to="/signup" style={styles.buttonSignup}>Inscription</Link>
                     </>
                 )}
             </div>

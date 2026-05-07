@@ -7,7 +7,6 @@ interface Course {
     id: number;
     title: string;
     description: string;
-    capacity: number;
     isActive: boolean;
     gifUrl: string;
     coachName: string;
@@ -35,14 +34,12 @@ function CoursesPage() {
     // champs formulaire création
     const [newTitle, setNewTitle] = useState('');
     const [newDescription, setNewDescription] = useState('');
-    const [newCapacity, setNewCapacity] = useState('');
     const [newBodyPart, setNewBodyPart] = useState('');
     const [newNiveau, setNewNiveau] = useState('');
     // états pour édition cours
     const [editingCourseId, setEditingCourseId] = useState<number | null>(null);
     const [editTitle, setEditTitle] = useState('');
     const [editDescription, setEditDescription] = useState('');
-    const [editCapacity, setEditCapacity] = useState('');
 
     useEffect(() => {
         // charger les infos du service si serviceId présent
@@ -84,7 +81,6 @@ function CoursesPage() {
             await api.post('/courses', {
                 title: newTitle,
                 description: newDescription,
-                capacity: parseInt(newCapacity),
                 bodyPart: newBodyPart,
                 niveau: newNiveau,
                 serviceId: serviceId ? parseInt(serviceId) : undefined,
@@ -93,7 +89,6 @@ function CoursesPage() {
             setShowModal(false);
             setNewTitle('');
             setNewDescription('');
-            setNewCapacity('');
             setNewBodyPart('');
             setNewNiveau('');
             // recharger la liste des cours
@@ -109,7 +104,6 @@ function CoursesPage() {
         setEditingCourseId(course.id);
         setEditTitle(course.title);
         setEditDescription(course.description);
-        setEditCapacity(String(course.capacity));
     };
 
     // sauvegarder modifications cours
@@ -118,7 +112,6 @@ function CoursesPage() {
             await api.patch(`/courses/${id}`, {
                 title: editTitle,
                 description: editDescription,
-                capacity: parseInt(editCapacity),
             });
             setEditingCourseId(null);
             // recharger les cours
@@ -197,17 +190,6 @@ function CoursesPage() {
                                     onChange={e => setNewDescription(e.target.value)}
                                     style={styles.input}
                                     placeholder="Description du cours"
-                                    required
-                                />
-                            </div>
-                            <div style={styles.field}>
-                                <label style={styles.label}>Capacité</label>
-                                <input
-                                    type="number"
-                                    value={newCapacity}
-                                    onChange={e => setNewCapacity(e.target.value)}
-                                    style={styles.input}
-                                    placeholder="Nombre de places"
                                     required
                                 />
                             </div>
@@ -292,13 +274,6 @@ function CoursesPage() {
                                         onChange={e => setEditDescription(e.target.value)}
                                         style={styles.input}
                                         placeholder="Description"
-                                    />
-                                    <input
-                                        type="number"
-                                        value={editCapacity}
-                                        onChange={e => setEditCapacity(e.target.value)}
-                                        style={styles.input}
-                                        placeholder="Capacité"
                                     />
                                     <div style={styles.modalButtons}>
                                         {/* sauvegarder */}
