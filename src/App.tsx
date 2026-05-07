@@ -10,6 +10,7 @@ import ReservationsPage from './pages/ReservationsPage';
 import ServicesPage from './pages/ServicePage';
 import GroupesPage from './pages/GroupePage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminMessagesPage from './pages/AdminMessagesPage';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="/groupes" element={<GroupesPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/messages" element={<AdminMessagesPage />} />
 
             {/* Accessible seulement si connecté */}
             <Route path="/reservations" element={
