@@ -485,23 +485,29 @@ function GroupesPage() {
 
                                         {/* boutons client — seulement si groupe validé */}
                                         {(user?.role === 'client' || !isLoggedIn) && groupe.estValide && (
-                                            <div style={styles.buttons}>
-                                                {/* réserver si places disponibles */}
-                                                <button
-                                                    onClick={() => handleReserverClick(groupe)}
-                                                    style={complet ? styles.btnDisabled : styles.btnReserver}
-                                                    disabled={complet}
-                                                >
-                                                    {complet ? 'Complet' : 'Réserver'}
-                                                </button>
-                                                {/* liste d'attente si complet */}
-                                                {complet && isLoggedIn && (
-                                                    <button onClick={() => handleWaitlist(groupe.id)} style={styles.btnWaitlist}>
-                                                        Liste d'attente
-                                                    </button>
-                                                )}
-                                            </div>
+                                    <div style={styles.buttons}>
+                                        <button
+                                        onClick={() => {
+                                            if (!isLoggedIn) {
+                                            navigate(`/login?redirect=/groupes?courseId=${courseId}`);
+                                            return;
+                                            }
+                                            // rediriger vers le formulaire de paiement avec courseId et groupeId
+                                            navigate(`/payment?courseId=${courseId}&groupeId=${groupe.id}`);
+                                        }}
+                                        style={complet ? styles.btnDisabled : styles.btnReserver}
+                                        disabled={complet}
+                                        >
+                                        {complet ? 'Complet' : 'Réserver'}
+                                        </button>
+                                        {/* liste d'attente si complet */}
+                                        {complet && isLoggedIn && (
+                                        <button onClick={() => handleWaitlist(groupe.id)} style={styles.btnWaitlist}>
+                                            Liste d'attente
+                                        </button>
                                         )}
+                                    </div>
+                                    )}
 
                                         {/* message si non connecté */}
                                         {!isLoggedIn && groupe.estValide && (

@@ -32,7 +32,7 @@ function Navbar() {
                     <Link to="/services" style={styles.link}>Services</Link>
                 )}
 
-                <Link to="/contact" style={styles.link}>Contact</Link>
+                
 
                 {/* réservations — client seulement */}
                 {user?.role === 'client' && (
@@ -42,11 +42,18 @@ function Navbar() {
                 {/* lien gestion — coach et admin seulement */}
                 {(user?.role === 'coach' || user?.role === 'admin') && (
                     <Link to="/gestion/services" style={styles.link}>Gestion</Link>
+                    
+                )}
+                {/* Admin- Voir les messages */}
+                {user?.role === 'admin' ? (
+                    <Link to="/admin/messages" style={styles.link}>Voir les messages</Link>
+                ) : (
+                    <Link to="/contact" style={styles.link}>Contact</Link>
                 )}
 
                 {/* lien gérer utilisateurs — admin seulement */}
                 {user?.role === 'admin' && (
-                    <Link to="/admin/users" style={styles.link}>Utilisateurs</Link>
+                    <Link to="/admin/users" style={styles.link}>Gérer les utilisateurs</Link>
                 )}
 
                 {/* si connecté — bouton déconnexion */}

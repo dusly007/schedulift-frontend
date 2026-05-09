@@ -14,6 +14,7 @@ import AdminMessagesPage from './pages/AdminMessagesPage';
 import GestionCoursPage from './pages/GestionCoursPage';
 import GestionGroupesPage from './pages/GestionGroupePage';
 import GestionServicesPage from './pages/GestionServicePage';
+import PaymentPage from './pages/PaymentPage';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/messages" element={<AdminMessagesPage />} />
+            <Route path="/payment" element={<PaymentPage />} />
 
             {/* Accessible seulement si connecté */}
             <Route path="/reservations" element={

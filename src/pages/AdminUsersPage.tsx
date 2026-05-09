@@ -3,8 +3,12 @@ import api from '../services/api';
 
 interface User {
   id: number;
+  prenom: string;
+  nom: string;
+  dateNaissance: string;
+  sexe: string; 
   email: string;
-  role: string;
+  role: string; 
 }
 
 export default function AdminUsersPage() {
@@ -13,9 +17,8 @@ export default function AdminUsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get('/users');
-
-      setUsers(res.data);
+      const res = await api.get('/users', { withCredentials: true });
+      setUsers(res.data); 
     } catch (err) {
       console.error(err);
       setStatus("Accès refusé ou erreur serveur.");
@@ -58,38 +61,26 @@ export default function AdminUsersPage() {
 
       {status && <p>{status}</p>}
 
-      {users.map((user) => (
-        <div
-          key={user.id}
-          style={{
-            border: '1px solid #ccc',
-            padding: '15px',
-            marginBottom: '10px',
-            borderRadius: '8px',
-          }}
-        >
-          <p><strong>Email :</strong> {user.email}</p>
-          <p><strong>Rôle :</strong> {user.role}</p>
+    {users.map((user) => (
 
-          <select
-            value={user.role}
-            onChange={(e) =>
-              updateRole(user.id, e.target.value)
-            }
-          >
-            <option value="client">client</option>
-            <option value="coach">coach</option>
-            <option value="admin">admin</option>
-          </select>
+      <div key={user.id} style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '10px', borderRadius: '8px' }}>
+        <p><strong>Prénom :</strong> {user.prenom}</p>
+        <p><strong>Nom :</strong> {user.nom}</p>
+        <p><strong>Date de naissance :</strong> {user.dateNaissance}</p>
+        <p><strong>Sexe :</strong> {user.sexe}</p>
+        <p><strong>Email :</strong> {user.email}</p>
+        <p><strong>Rôle :</strong> {user.role}</p>
 
-          <button
-            onClick={() => deleteUser(user.id)}
-            style={{ marginLeft: '10px' }}
-          >
-            Supprimer
-          </button>
-        </div>
-      ))}
+      <select value={user.role} onChange={(e) => updateRole(user.id, e.target.value)}>
+        <option value="client">client</option>
+        <option value="coach">coach</option>
+        <option value="admin">admin</option>
+      </select>
+      <button onClick={() => deleteUser(user.id)} style={{ marginLeft: '10px' }}>Supprimer</button>
+    </div>
+
+    ))}
+    
     </div>
   );
 }

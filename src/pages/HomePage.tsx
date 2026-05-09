@@ -65,9 +65,7 @@ function HomePage() {
                         <p style={styles.ctaText}>Gérez les services, les utilisateurs et les messages.</p>
                         <div style={styles.heroButtons}>
                             <Link to="/services" style={styles.btnPrimary}>Gérer les services</Link>
-                            <Link to="/admin/users" style={styles.btnSecondary}>Gérer les utilisateurs</Link>
                             <Link to="/reservations" style={styles.btnSecondary}>Voir les réservations</Link>
-                            <Link to="/admin/messages" style={styles.btnSecondary}>Voir les messages</Link>
                         </div>
                     </>
                 ) : user?.role === 'coach' ? (
