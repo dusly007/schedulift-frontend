@@ -1,3 +1,4 @@
+import AdminNotifications from '../components/AdminNotification';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -98,6 +99,9 @@ function AdminDashboard() {
                     <p style={styles.statDetail}>Tous clients confondus</p>
                 </div>
             </div>
+            
+            {/* notifications admin */}
+            <AdminNotifications />
 
             {/* raccourcis */}
             <h2 style={styles.sectionTitle}>Accès rapides</h2>
@@ -139,9 +143,9 @@ function AdminDashboard() {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: {
-        padding: '3rem 2rem',
-        backgroundColor: '#f9f9f9',
-        minHeight: '80vh',
+        marginTop: '2rem',
+        marginBottom: '3rem',
+        width: '100%',
     },
     title: {
         color: '#1a2f5e',

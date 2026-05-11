@@ -64,6 +64,11 @@ function Navbar() {
                     <NavLink to="/admin/users" style={getLinkStyle}>Gérer les utilisateurs</NavLink>
                 )}
 
+                {/* lien dashboard — admin seulement */}
+                {user?.role === 'admin' && (
+                    <NavLink to="/admin/dashboard" style={getLinkStyle}>Dashboard</NavLink>
+                )}
+
                 {/* si connecté — bouton déconnexion */}
                 {isLoggedIn ? (
                     <button onClick={handleSignout} style={styles.buttonSignout}>
