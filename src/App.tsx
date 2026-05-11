@@ -17,6 +17,7 @@ import GestionServicesPage from './pages/GestionServicePage';
 import PaymentPage from './pages/PaymentPage';
 import AdminDashboard from './pages/AdminDashboard';
 import CoachDashboard from './pages/CoachDashbpard';
+import Footer from './components/Footer'; 
 
 function App() {
   return (
@@ -74,6 +75,7 @@ function App() {
             } />
           </Routes>
         </div>
+        <Footer /> 
       </div>
     </BrowserRouter>
   );

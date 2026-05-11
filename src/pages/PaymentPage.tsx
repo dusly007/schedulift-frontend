@@ -11,6 +11,8 @@ export default function PaymentPage() {
     const searchParams = new URLSearchParams(location.search);
     const courseId = searchParams.get('courseId');
     const groupeId = searchParams.get('groupeId');
+    // récupérer l'id de la waitlist si le client vient de la liste d'attente
+    const fromWaitlistId = searchParams.get('fromWaitlist');
 
     // montant récupéré depuis le cours
     const [amount, setAmount] = useState<number>(0);
@@ -64,6 +66,11 @@ export default function PaymentPage() {
                 cvv: paymentInfo.cvv,
             });
 
+            //  si le client vient de la liste d'attente — supprimer son entrée waitlist
+            if (fromWaitlistId) {
+                await api.delete(`/wait-list/${fromWaitlistId}`);
+            }
+
             setStatus('Paiement effectué avec succès !');
 
             // rediriger vers mes réservations après succès
@@ -83,6 +90,13 @@ export default function PaymentPage() {
         <div style={styles.container}>
             <div style={styles.card}>
                 <h2 style={styles.title}>Paiement</h2>
+
+                {/*  badge si le client vient de la liste d'attente */}
+                {fromWaitlistId && (
+                    <div style={styles.waitlistBadge}>
+                        🎉 Une place s'est libérée — confirmez votre place en payant !
+                    </div>
+                )}
 
                 {/* infos du cours */}
                 {courseTitre && (
@@ -196,6 +210,18 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '1.8rem',
         textAlign: 'center',
         marginBottom: '1.5rem',
+    },
+    //  badge liste d'attente
+    waitlistBadge: {
+        backgroundColor: '#e6f4ea',
+        color: '#2d7a3a',
+        border: '2px solid #2d7a3a',
+        padding: '0.75rem 1rem',
+        borderRadius: '4px',
+        marginBottom: '1.5rem',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        fontSize: '0.9rem',
     },
     infoBox: {
         backgroundColor: '#f9f9f9',
