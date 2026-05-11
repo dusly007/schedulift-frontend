@@ -8,6 +8,9 @@ interface AdminNotification {
     title: string;
     message: string;
     read: boolean;
+    groupeId?: number | null;
+    groupeName?: string | null;
+    courseTitle?: string | null;
     courseId?: number | null;
     serviceId?: number | null;
     waitlistCount: number;
@@ -92,13 +95,15 @@ function AdminNotifications() {
                                         {notification.waitlistCount > 1 ? 's' : ''}
                                     </span>
 
-                                    {notification.courseId && (
-                                        <span>Cours #{notification.courseId}</span>
+                                        {notification.groupeName && (
+                                        <span>{notification.groupeName}</span>
                                     )}
 
-                                    {notification.serviceId && (
-                                        <span>Service #{notification.serviceId}</span>
+                                    {notification.courseTitle && (
+                                        <span>Cours : {notification.courseTitle}</span>
                                     )}
+
+                                
                                 </div>
                             </div>
 
