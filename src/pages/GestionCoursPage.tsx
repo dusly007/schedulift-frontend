@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../services/api';
+import Spinner from '../components/Spinner';
 
 interface Course {
     id: number;
@@ -30,6 +31,7 @@ function GestionCoursPage() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
 
     // filtres
     const [filtreService, setFiltreService] = useState(serviceIdFilter || '');
@@ -67,7 +69,8 @@ function GestionCoursPage() {
         // charger tous les cours
         api.get('/courses')
             .then(res => setCourses(res.data))
-            .catch(() => setError('Erreur lors du chargement des cours'));
+            .catch(() => setError('Erreur lors du chargement des cours'))
+            .finally(() => setLoading(false));
     }, [user]);
 
     // recharger les cours
@@ -169,6 +172,9 @@ function GestionCoursPage() {
     const getNomService = (serviceId: number) => {
         return services.find(s => s.id === serviceId)?.nom || '—';
     };
+
+    // afficher spinner pendant le chargement
+    if (loading) return <Spinner />;
 
     return (
         <div style={styles.container}>

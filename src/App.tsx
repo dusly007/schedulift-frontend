@@ -15,6 +15,8 @@ import GestionCoursPage from './pages/GestionCoursPage';
 import GestionGroupesPage from './pages/GestionGroupePage';
 import GestionServicesPage from './pages/GestionServicePage';
 import PaymentPage from './pages/PaymentPage';
+import AdminDashboard from './pages/AdminDashboard';
+import CoachDashboard from './pages/CoachDashbpard';
 
 function App() {
   return (
@@ -35,6 +37,18 @@ function App() {
             <Route path="/admin/messages" element={<AdminMessagesPage />} />
             <Route path="/payment" element={<PaymentPage />} />
 
+            {/* dashboards admin et coach */}
+            <Route path="/admin/dashboard" element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/coach/dashboard" element={
+              <ProtectedRoute>
+                <CoachDashboard />
+              </ProtectedRoute>
+            } />
+
             {/* Accessible seulement si connecté */}
             <Route path="/reservations" element={
               <ProtectedRoute>
@@ -42,25 +56,21 @@ function App() {
               </ProtectedRoute>
             } />
 
-
             {/* coach et admin */}
             <Route path="/gestion/cours" element={
               <ProtectedRoute>
                 <GestionCoursPage />
               </ProtectedRoute>
             } />
-
-
             <Route path="/gestion/groupes" element={
               <ProtectedRoute>
                 <GestionGroupesPage />
               </ProtectedRoute>
             } />
-
             <Route path="/gestion/services" element={
               <ProtectedRoute>
                 <GestionServicesPage />
-            </ProtectedRoute>
+              </ProtectedRoute>
             } />
           </Routes>
         </div>

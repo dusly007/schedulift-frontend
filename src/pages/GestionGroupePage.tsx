@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../services/api';
+import Spinner from '../components/Spinner';
 
 interface Groupe {
     id: number;
@@ -35,6 +36,7 @@ function GestionGroupesPage() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [placesRestantes, setPlacesRestantes] = useState<{ [key: number]: number }>({});
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
 
     // modal création
     const [showModal, setShowModal] = useState(false);
@@ -87,7 +89,8 @@ function GestionGroupesPage() {
                         .catch(() => {});
                 });
             })
-            .catch(() => setError('Erreur lors du chargement des groupes'));
+            .catch(() => setError('Erreur lors du chargement des groupes'))
+            .finally(() => setLoading(false));
     }, [user, courseIdFilter]);
 
     // recharger les groupes
@@ -189,6 +192,9 @@ function GestionGroupesPage() {
     const getTitreCours = (courseId: number) => {
         return courses.find(c => c.id === courseId)?.title || `Cours #${courseId}`;
     };
+
+    // afficher spinner pendant le chargement
+    if (loading) return <Spinner />;
 
     return (
         <div style={styles.container}>
@@ -359,7 +365,7 @@ function GestionGroupesPage() {
                                         <td style={styles.td}>{groupe.nom}</td>
                                         <td style={styles.td}>{getTitreCours(groupe.courseId)}</td>
                                         <td style={styles.td}>{groupe.horaire}</td>
-                                        <td style={styles.td} >
+                                        <td style={styles.td}>
                                             {new Date(groupe.dateDebut).toLocaleDateString('fr-CA')} →{' '}
                                             {new Date(groupe.dateFin).toLocaleDateString('fr-CA')}
                                         </td>
@@ -469,7 +475,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         cursor: 'pointer',
         marginLeft: 'auto',
     },
-    // fond sombre derrière le modal
     overlay: {
         position: 'fixed',
         top: 0,

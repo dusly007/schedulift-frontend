@@ -1,8 +1,16 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useEffect } from 'react';
 
 function HomePage() {
     const { isLoggedIn, user } = useAuth();
+    const navigate = useNavigate();
+
+    // rediriger admin et coach vers leur dashboard
+    useEffect(() => {
+        if (user?.role === 'admin') navigate('/admin/dashboard');
+        if (user?.role === 'coach') navigate('/coach/dashboard');
+    }, [user]);
 
     return (
         <div>
@@ -57,25 +65,6 @@ function HomePage() {
                         <h2 style={styles.ctaTitle}>Prêt à commencer ?</h2>
                         <p style={styles.ctaText}>Rejoignez des centaines de membres et transformez votre corps.</p>
                         <Link to="/signup" style={styles.btnPrimary}>Créer un compte</Link>
-                    </>
-                ) : user?.role === 'admin' ? (
-                    // admin → tableau de bord
-                    <>
-                        <h2 style={styles.ctaTitle}>Tableau de bord Admin</h2>
-                        <p style={styles.ctaText}>Gérez les services, les utilisateurs et les messages.</p>
-                        <div style={styles.heroButtons}>
-                            <Link to="/services" style={styles.btnPrimary}>Gérer les services</Link>
-                            <Link to="/reservations" style={styles.btnSecondary}>Voir les réservations</Link>
-                        </div>
-                    </>
-                ) : user?.role === 'coach' ? (
-                    // coach → gérer les cours
-                    <>
-                        <h2 style={styles.ctaTitle}>Bon retour !</h2>
-                        <p style={styles.ctaText}>Gérez vos cours et créez de nouvelles séances.</p>
-                        <div style={styles.heroButtons}>
-                            <Link to="/services" style={styles.btnPrimary}>Voir les services</Link>
-                        </div>
                     </>
                 ) : (
                     // client connecté → voir les services
