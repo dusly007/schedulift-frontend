@@ -1,3 +1,4 @@
+import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -31,6 +32,7 @@ function CourseCard({ course }: Props) {
     const [editTitle, setEditTitle] = useState(course.title);
     const [editDescription, setEditDescription] = useState(course.description);
     const [editCapacity, setEditCapacity] = useState(course.capacity);
+    const location = useLocation();
 
     useEffect(() => {
         api.get(`/reservations/places/${course.id}`)
@@ -248,8 +250,15 @@ function CourseCard({ course }: Props) {
                         {/* message si non connecté */}
                         {!isLoggedIn && isActive && (
                             <p style={styles.loginMsg}>
+                            <Link
+                                to="/login"
+                                state={{ from: location.pathname }}
+                                style={styles.loginLink}
+                            >
                                 Connectez-vous pour réserver
+                            </Link>
                             </p>
+                    
                         )}
                     </>
                 )}
@@ -418,6 +427,11 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '0.9rem',
         textAlign: 'center',
         fontStyle: 'italic',
+    },
+    loginLink: {
+        color: '#f47c20',
+        fontWeight: 'bold',
+        textDecoration: 'none',
     },
 };
 

@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 
 function SignupPage() {
     const navigate = useNavigate(); //redirection
+    const location = useLocation();
+    const from = location.state?.from || '/courses'; //page d'origine ou login par défaut
     const [prenom, setPrenom] = useState('');
     const [nom, setNom] = useState('');
     const [dateNaissance, setDateNaissance] = useState('');
@@ -27,7 +29,7 @@ function SignupPage() {
                 password,
                 role: 'client' });
 
-            navigate('/login');
+            navigate('/login', { state: { from } }); //rediriger vers login après inscription
         } catch (err: any) {
             const backendMessage = err.response?.data?.message;
 
@@ -49,7 +51,7 @@ function SignupPage() {
                 <h1 style={styles.title}>Inscription</h1>
 
                 <p style={styles.subtitle}>
-                    Déjà membre ? <Link to="/login" style={styles.link}>Se connecter</Link>
+                    Déjà membre ? <Link to="/login" state= {{ from }} style={styles.link}>Se connecter</Link>
                 </p>
 
                 {/* afficher erreur si problème */}

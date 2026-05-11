@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext'; 
 
 function LoginPage() {
+    
     const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from || '/courses';
     const { setUser } = useAuth();
     const [searchParams] = useSearchParams();
     // récupérer la page d'origine si présente dans l'URL
@@ -22,7 +25,7 @@ function LoginPage() {
             const res = await api.post('/auth/signin', { email, password });
             setUser(res.data);
             // rediriger vers la page d'origine après connexion
-            navigate(redirect); 
+            navigate(from); 
 
         } catch (err) {
             setError('Invalid email or password');
@@ -36,7 +39,7 @@ function LoginPage() {
 
                 {/* lien page inscription */}
                 <p style={styles.subtitle}>
-                    Pas encore membre ? <Link to="/signup" style={styles.link}>S'inscrire</Link>
+                    Pas encore membre ? <Link to="/signup" state={{ from }} style={styles.link}>S'inscrire</Link>
                 </p>
 
                 {/* erreur si elle existe */}
