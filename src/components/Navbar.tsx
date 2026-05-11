@@ -2,16 +2,42 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import logo from '../assets/logo.png';
+import { useState, useEffect } from 'react';
 
 function Navbar() {
     const { isLoggedIn, user, setUser } = useAuth();
     const navigate = useNavigate();
 
+    // compteur de notifications waitlist pretAPayer
+    const [nbNotifications, setNbNotifications] = useState(0);
+
+    useEffect(() => {
+        // charger seulement si client connecté
+        if (!isLoggedIn || user?.role !== 'client') return;
+
+        const checkNotifications = async () => {
+            try {
+                const res = await api.get('/wait-list/user');
+                // compter les entrées pretAPayer
+                const nb = res.data.filter((wl: any) => wl.pretAPayer).length;
+                setNbNotifications(nb);
+            } catch {
+                // silencieux — pas bloquer la navbar
+            }
+        };
+
+        // vérifier au chargement
+        checkNotifications();
+
+        // vérifier toutes les 30 secondes
+        const interval = setInterval(checkNotifications, 30000);
+        return () => clearInterval(interval);
+    }, [isLoggedIn, user?.role]);
+
     const handleSignout = async () => {
         await api.post('/auth/signout');
-        // déconnecté
         setUser(null);
-        // vers login
+        setNbNotifications(0);
         navigate('/login');
     };
 
@@ -42,9 +68,17 @@ function Navbar() {
                     <NavLink to="/services" style={getLinkStyle}>Services</NavLink>
                 )}
 
-                {/* réservations — client seulement */}
+                {/* réservations — client seulement avec badge notification */}
                 {user?.role === 'client' && (
-                    <NavLink to="/reservations" style={getLinkStyle}>Mes réservations</NavLink>
+                    <div style={styles.navItemContainer}>
+                        <NavLink to="/reservations" style={getLinkStyle}>
+                            Mes réservations
+                        </NavLink>
+                        {/*  badge orange si place disponible */}
+                        {nbNotifications > 0 && (
+                            <span style={styles.badge}>{nbNotifications}</span>
+                        )}
+                    </div>
                 )}
 
                 {/* lien gestion — coach et admin seulement */}
@@ -102,6 +136,28 @@ const styles: { [key: string]: React.CSSProperties } = {
         display: 'flex',
         gap: '1.5rem',
         alignItems: 'center',
+    },
+    // conteneur pour le lien + badge
+    navItemContainer: {
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+    },
+    // badge notification orange
+    badge: {
+        position: 'absolute',
+        top: '-8px',
+        right: '-12px',
+        backgroundColor: '#f47c20',
+        color: 'white',
+        borderRadius: '50%',
+        width: '18px',
+        height: '18px',
+        fontSize: '0.7rem',
+        fontWeight: 'bold',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     buttonLogin: {
         color: '#1a2f5e',

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Spinner from '../components/Spinner';
 
 interface Groupe {
@@ -13,7 +13,7 @@ interface Groupe {
     dureeEnSemaines: number;
     coachName: string;
     courseId: number;
-    course?: { title: string; prix: number };
+    course?: { title: string; prix: number; id: number };
 }
 
 interface Reservation {
@@ -29,11 +29,13 @@ interface WaitList {
     userId: number;
     groupeId: number;
     createdAt: string;
+    pretAPayer: boolean; //  ajouter
     groupe: Groupe;
 }
 
 function ReservationsPage() {
     const { user } = useAuth();
+    const navigate = useNavigate(); //  ajouter
     const [reservations, setReservations] = useState<Reservation[]>([]);
     const [waitlists, setWaitlists] = useState<WaitList[]>([]);
     const [positions, setPositions] = useState<{ [key: number]: { position: number; total: number; message: string } }>({});
@@ -64,14 +66,16 @@ function ReservationsPage() {
                 if (user?.role === 'client') {
                     const wlRes = await api.get('/wait-list/user');
                     setWaitlists(wlRes.data);
-                    // charger position pour chaque groupe en attente
+                    // charger position pour chaque groupe en attente — seulement si pas pretAPayer
                     wlRes.data.forEach((wl: WaitList) => {
-                        api.get(`/wait-list/position/${wl.groupeId}`)
-                            .then(r => setPositions(prev => ({
-                                ...prev,
-                                [wl.groupeId]: r.data
-                            })))
-                            .catch(() => {});
+                        if (!wl.pretAPayer) {
+                            api.get(`/wait-list/position/${wl.groupeId}`)
+                                .then(r => setPositions(prev => ({
+                                    ...prev,
+                                    [wl.groupeId]: r.data
+                                })))
+                                .catch(() => {});
+                        }
                     });
                 }
             } catch {
@@ -271,59 +275,125 @@ function ReservationsPage() {
                     ) : (
                         <div style={styles.grid}>
                             {waitlists.map(wl => (
-                                <div key={wl.id} style={styles.cardWaitlist}>
+                                <div
+                                    key={wl.id}
+                                    style={wl.pretAPayer ? styles.cardPretAPayer : styles.cardWaitlist}
+                                >
                                     <div style={styles.cardBody}>
-                                        {/* badge en attente */}
-                                        <div style={styles.badgeAttente}>⏳ En attente</div>
 
-                                        {/* titre du cours */}
-                                        {wl.groupe?.course?.title && (
-                                            <p style={styles.coursTitle}>
-                                                {wl.groupe.course.title}
-                                            </p>
-                                        )}
+                                        {/* ✅ cas 1 — place disponible, doit payer */}
+                                        {wl.pretAPayer ? (
+                                            <>
+                                                <div style={styles.badgePlaceLibre}>🎉 Place disponible !</div>
 
-                                        {/* nom du groupe */}
-                                        <h3 style={styles.cardTitle}>
-                                            {wl.groupe?.nom || `Groupe #${wl.groupeId}`}
-                                        </h3>
+                                                {/* titre du cours */}
+                                                {wl.groupe?.course?.title && (
+                                                    <p style={styles.coursTitle}>
+                                                        {wl.groupe.course.title}
+                                                    </p>
+                                                )}
 
-                                        {/* infos du groupe */}
-                                        <div style={styles.cardInfo}>
-                                            {wl.groupe?.horaire && (
-                                                <p style={styles.infoItem}>📅 {wl.groupe.horaire}</p>
-                                            )}
-                                            {wl.groupe?.dateDebut && (
-                                                <p style={styles.infoItem}>
-                                                    Du {new Date(wl.groupe.dateDebut).toLocaleDateString('fr-CA')} au {new Date(wl.groupe.dateFin).toLocaleDateString('fr-CA')}
+                                                {/* nom du groupe */}
+                                                <h3 style={styles.cardTitle}>
+                                                    {wl.groupe?.nom || `Groupe #${wl.groupeId}`}
+                                                </h3>
+
+                                                {/* infos du groupe */}
+                                                <div style={styles.cardInfo}>
+                                                    {wl.groupe?.horaire && (
+                                                        <p style={styles.infoItem}>📅 {wl.groupe.horaire}</p>
+                                                    )}
+                                                    {wl.groupe?.dateDebut && (
+                                                        <p style={styles.infoItem}>
+                                                            Du {new Date(wl.groupe.dateDebut).toLocaleDateString('fr-CA')} au {new Date(wl.groupe.dateFin).toLocaleDateString('fr-CA')}
+                                                        </p>
+                                                    )}
+                                                    {wl.groupe?.coachName && (
+                                                        <p style={styles.infoItem}>Coach : {wl.groupe.coachName}</p>
+                                                    )}
+                                                    {wl.groupe?.course?.prix && (
+                                                        <p style={styles.prixPaye}>💰 {wl.groupe.course.prix}$ à payer</p>
+                                                    )}
+                                                </div>
+
+                                                {/* box incitation à payer */}
+                                                <div style={styles.pretAPayerBox}>
+                                                    <p style={styles.pretAPayerText}>
+                                                        Une place s'est libérée ! Confirmez votre inscription en payant.
+                                                    </p>
+                                                    <button
+                                                        onClick={() => navigate(
+                                                            `/payment?courseId=${wl.groupe.course?.id}&groupeId=${wl.groupeId}&fromWaitlist=${wl.id}`
+                                                        )}
+                                                        style={styles.btnPayer}
+                                                    >
+                                                        Payer et confirmer ma place →
+                                                    </button>
+                                                </div>
+
+                                                {/* bouton se retirer quand même */}
+                                                <button
+                                                    onClick={() => setShowConfirmWaitlistId(wl.id)}
+                                                    style={styles.btnRetirerSecondaire}
+                                                >
+                                                    Ne pas prendre la place
+                                                </button>
+                                            </>
+                                        ) : (
+                                            /*  cas 2 — toujours en attente */
+                                            <>
+                                                <div style={styles.badgeAttente}>⏳ En attente</div>
+
+                                                {/* titre du cours */}
+                                                {wl.groupe?.course?.title && (
+                                                    <p style={styles.coursTitle}>
+                                                        {wl.groupe.course.title}
+                                                    </p>
+                                                )}
+
+                                                {/* nom du groupe */}
+                                                <h3 style={styles.cardTitle}>
+                                                    {wl.groupe?.nom || `Groupe #${wl.groupeId}`}
+                                                </h3>
+
+                                                {/* infos du groupe */}
+                                                <div style={styles.cardInfo}>
+                                                    {wl.groupe?.horaire && (
+                                                        <p style={styles.infoItem}>📅 {wl.groupe.horaire}</p>
+                                                    )}
+                                                    {wl.groupe?.dateDebut && (
+                                                        <p style={styles.infoItem}>
+                                                            Du {new Date(wl.groupe.dateDebut).toLocaleDateString('fr-CA')} au {new Date(wl.groupe.dateFin).toLocaleDateString('fr-CA')}
+                                                        </p>
+                                                    )}
+                                                    {wl.groupe?.coachName && (
+                                                        <p style={styles.infoItem}>Coach : {wl.groupe.coachName}</p>
+                                                    )}
+                                                </div>
+
+                                                {/* position dans la liste */}
+                                                {positions[wl.groupeId] && (
+                                                    <div style={styles.positionBox}>
+                                                        <p style={styles.positionText}>
+                                                            {positions[wl.groupeId].message}
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* date d'inscription */}
+                                                <p style={styles.date}>
+                                                    Inscrit le : {new Date(wl.createdAt).toLocaleDateString('fr-CA')}
                                                 </p>
-                                            )}
-                                            {wl.groupe?.coachName && (
-                                                <p style={styles.infoItem}>Coach : {wl.groupe.coachName}</p>
-                                            )}
-                                        </div>
 
-                                        {/* position dans la liste */}
-                                        {positions[wl.groupeId] && (
-                                            <div style={styles.positionBox}>
-                                                <p style={styles.positionText}>
-                                                    {positions[wl.groupeId].message}
-                                                </p>
-                                            </div>
+                                                {/* bouton se retirer */}
+                                                <button
+                                                    onClick={() => setShowConfirmWaitlistId(wl.id)}
+                                                    style={styles.btnRetirer}
+                                                >
+                                                    Se retirer de la liste
+                                                </button>
+                                            </>
                                         )}
-
-                                        {/* date d'inscription */}
-                                        <p style={styles.date}>
-                                            Inscrit le : {new Date(wl.createdAt).toLocaleDateString('fr-CA')}
-                                        </p>
-
-                                        {/* bouton se retirer */}
-                                        <button
-                                            onClick={() => setShowConfirmWaitlistId(wl.id)}
-                                            style={styles.btnRetirer}
-                                        >
-                                            Se retirer de la liste
-                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -461,6 +531,15 @@ const styles: { [key: string]: React.CSSProperties } = {
         overflow: 'hidden',
         border: '2px solid #fff3e0',
     },
+    //  carte verte quand place disponible
+    cardPretAPayer: {
+        backgroundColor: 'white',
+        borderRadius: '8px',
+        boxShadow: '0 2px 15px rgba(45,122,58,0.2)',
+        width: '320px',
+        overflow: 'hidden',
+        border: '2px solid #2d7a3a',
+    },
     cardBody: {
         padding: '1.5rem',
     },
@@ -477,6 +556,17 @@ const styles: { [key: string]: React.CSSProperties } = {
     badgeAttente: {
         backgroundColor: '#fff3e0',
         color: '#f47c20',
+        padding: '0.3rem 0.75rem',
+        borderRadius: '20px',
+        fontSize: '0.8rem',
+        fontWeight: 'bold',
+        display: 'inline-block',
+        marginBottom: '0.75rem',
+    },
+    //  badge place libre
+    badgePlaceLibre: {
+        backgroundColor: '#e6f4ea',
+        color: '#2d7a3a',
         padding: '0.3rem 0.75rem',
         borderRadius: '20px',
         fontSize: '0.8rem',
@@ -524,6 +614,33 @@ const styles: { [key: string]: React.CSSProperties } = {
         textAlign: 'center',
         margin: 0,
     },
+    // box pret à payer
+    pretAPayerBox: {
+        backgroundColor: '#e6f4ea',
+        padding: '1rem',
+        borderRadius: '4px',
+        marginBottom: '0.75rem',
+        border: '1px solid #2d7a3a',
+        textAlign: 'center',
+    },
+    pretAPayerText: {
+        color: '#2d7a3a',
+        fontSize: '0.85rem',
+        fontWeight: 'bold',
+        margin: '0 0 0.75rem 0',
+    },
+    // bouton payer
+    btnPayer: {
+        width: '100%',
+        backgroundColor: '#2d7a3a',
+        color: 'white',
+        border: 'none',
+        padding: '0.75rem',
+        borderRadius: '4px',
+        fontSize: '0.95rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+    },
     adminInfo: {
         color: '#666',
         fontSize: '0.85rem',
@@ -555,6 +672,18 @@ const styles: { [key: string]: React.CSSProperties } = {
         borderRadius: '4px',
         fontSize: '0.95rem',
         cursor: 'pointer',
+    },
+    // bouton secondaire pour refuser la place
+    btnRetirerSecondaire: {
+        width: '100%',
+        backgroundColor: 'transparent',
+        color: '#666',
+        border: '1px solid #ccc',
+        padding: '0.5rem',
+        borderRadius: '4px',
+        fontSize: '0.85rem',
+        cursor: 'pointer',
+        marginTop: '0.5rem',
     },
     waitlistSection: {
         marginTop: '4rem',
