@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
+import Spinner from '../components/Spinner';
 
 interface Service {
     id: number;
@@ -16,6 +17,7 @@ function GestionServicesPage() {
 
     const [services, setServices] = useState<Service[]>([]);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
 
     // recherche par nom
     const [recherche, setRecherche] = useState('');
@@ -42,7 +44,8 @@ function GestionServicesPage() {
         // charger tous les services
         api.get('/services')
             .then(res => setServices(res.data))
-            .catch(() => setError('Erreur lors du chargement des services'));
+            .catch(() => setError('Erreur lors du chargement des services'))
+            .finally(() => setLoading(false));
     }, [user]);
 
     // recharger les services
@@ -66,7 +69,6 @@ function GestionServicesPage() {
                 description: newDescription,
                 imageUrl: newImageUrl || undefined,
             });
-            // fermer modal et reset champs
             setShowModal(false);
             setNewNom('');
             setNewDescription('');
@@ -113,6 +115,9 @@ function GestionServicesPage() {
         }
     };
 
+    // afficher spinner pendant le chargement
+    if (loading) return <Spinner />;
+
     return (
         <div style={styles.container}>
             {/* navigation entre les trois pages de gestion */}
@@ -126,20 +131,15 @@ function GestionServicesPage() {
 
             {/* barre de recherche + bouton créer */}
             <div style={styles.topBar}>
-                {/* recherche par nom ou description */}
                 <input
                     value={recherche}
                     onChange={e => setRecherche(e.target.value)}
                     style={styles.searchInput}
                     placeholder="Rechercher par nom ou description..."
                 />
-
-                {/* nombre de résultats */}
                 <span style={styles.resultCount}>
                     {servicesFiltres.length} service{servicesFiltres.length > 1 ? 's' : ''}
                 </span>
-
-                {/* bouton créer — admin seulement */}
                 {user?.role === 'admin' && (
                     <button onClick={() => setShowModal(true)} style={styles.btnCreate}>
                         + Créer un service
@@ -191,7 +191,6 @@ function GestionServicesPage() {
                     <tbody>
                         {servicesFiltres.map(service => (
                             <tr key={service.id} style={styles.tr}>
-                                {/* mode édition */}
                                 {editingId === service.id ? (
                                     <>
                                         <td style={styles.td}>
@@ -205,9 +204,7 @@ function GestionServicesPage() {
                                         </td>
                                         <td style={styles.td}>
                                             <div style={styles.actions}>
-                                                {/* sauvegarder */}
                                                 <button onClick={() => handleSave(service.id)} style={styles.btnSave}>✓</button>
-                                                {/* annuler édition */}
                                                 <button onClick={() => setEditingId(null)} style={styles.btnAnnuler}>✕</button>
                                             </div>
                                         </td>
@@ -215,7 +212,6 @@ function GestionServicesPage() {
                                 ) : (
                                     <>
                                         <td style={styles.td}>
-                                            {/* image du service */}
                                             {service.imageUrl && (
                                                 <img src={service.imageUrl} alt={service.nom} style={styles.thumbnail} />
                                             )}
@@ -224,20 +220,17 @@ function GestionServicesPage() {
                                         <td style={styles.td}>{service.description}</td>
                                         <td style={styles.td}>
                                             <div style={styles.actions}>
-                                                {/* modifier — admin seulement */}
                                                 {user?.role === 'admin' && (
                                                     <button onClick={() => handleEdit(service)} style={styles.btnEdit}>
                                                         Modifier
                                                     </button>
                                                 )}
-                                                {/* voir les cours du service */}
                                                 <button
                                                     onClick={() => navigate(`/gestion/cours?serviceId=${service.id}`)}
                                                     style={styles.btnCours}
                                                 >
                                                     Cours →
                                                 </button>
-                                                {/* supprimer — admin seulement */}
                                                 {user?.role === 'admin' && (
                                                     <button onClick={() => handleDelete(service.id)} style={styles.btnDelete}>
                                                         Supprimer
@@ -328,7 +321,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         cursor: 'pointer',
         whiteSpace: 'nowrap',
     },
-    // fond sombre derrière le modal
     overlay: {
         position: 'fixed',
         top: 0,

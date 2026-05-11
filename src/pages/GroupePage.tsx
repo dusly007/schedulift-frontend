@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import Spinner from '../components/Spinner';
 
 interface Groupe {
     id: number;
@@ -23,6 +24,7 @@ interface Course {
     id: number;
     title: string;
     gifUrl: string;
+    serviceId: number;
 }
 
 function GroupesPage() {
@@ -33,8 +35,13 @@ function GroupesPage() {
 
     const [groupes, setGroupes] = useState<Groupe[]>([]);
     const [course, setCourse] = useState<Course | null>(null);
+    const [service, setService] = useState<{ id: number; nom: string } | null>(null);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
     const [placesRestantes, setPlacesRestantes] = useState<{ [key: number]: number }>({});
+
+    // groupes déjà réservés par le client
+    const [groupesReserves, setGroupesReserves] = useState<number[]>([]);
 
     // filtres
     const [filtreGenre, setFiltreGenre] = useState('');
@@ -65,17 +72,24 @@ function GroupesPage() {
     useEffect(() => {
         if (!courseId) return;
 
-        // charger les infos du cours
-        api.get(`/courses/${courseId}`)
-            .then(res => setCourse(res.data))
-            .catch(() => setError('Cours non trouvé'));
+        const fetchData = async () => {
+            try {
+                // charger les infos du cours
+                const courseRes = await api.get(`/courses/${courseId}`);
+                setCourse(courseRes.data);
 
-        // charger les groupes du cours
-        api.get(`/groupes/course/${courseId}`)
-            .then(res => {
-                setGroupes(res.data);
+                // charger le service du cours pour le breadcrumb
+                if (courseRes.data.serviceId) {
+                    const serviceRes = await api.get(`/services/${courseRes.data.serviceId}`);
+                    setService(serviceRes.data);
+                }
+
+                // charger les groupes du cours
+                const groupesRes = await api.get(`/groupes/course/${courseId}`);
+                setGroupes(groupesRes.data);
+
                 // charger les places restantes pour chaque groupe
-                res.data.forEach((groupe: Groupe) => {
+                groupesRes.data.forEach((groupe: Groupe) => {
                     api.get(`/reservations/places/${groupe.id}`)
                         .then(r => setPlacesRestantes(prev => ({
                             ...prev,
@@ -83,9 +97,22 @@ function GroupesPage() {
                         })))
                         .catch(() => {});
                 });
-            })
-            .catch(() => setError('Erreur lors du chargement des groupes'));
-    }, [courseId]);
+
+                // charger les réservations du client
+                if (isLoggedIn && user?.role === 'client') {
+                    const resRes = await api.get('/reservations/user');
+                    const ids = resRes.data.map((r: any) => r.groupeId);
+                    setGroupesReserves(ids);
+                }
+            } catch {
+                setError('Erreur lors du chargement');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [courseId, isLoggedIn, user?.role]);
 
     // filtrer les groupes selon les filtres sélectionnés
     const groupesFiltres = groupes.filter(groupe => {
@@ -104,11 +131,9 @@ function GroupesPage() {
     // ouvrir modal confirmation avant réservation
     const handleReserverClick = (groupe: Groupe) => {
         if (!isLoggedIn) {
-            // rediriger vers login avec retour sur cette page
             navigate(`/login?redirect=/groupes?courseId=${courseId}`);
             return;
         }
-        // ouvrir modal confirmation
         setGroupeSelectionne(groupe);
         setShowConfirm(true);
     };
@@ -118,11 +143,12 @@ function GroupesPage() {
         if (!groupeSelectionne) return;
         try {
             await api.post('/reservations', { groupeId: groupeSelectionne.id });
-            // mettre à jour les places restantes localement
             setPlacesRestantes(prev => ({
                 ...prev,
                 [groupeSelectionne.id]: (prev[groupeSelectionne.id] || 0) - 1
             }));
+            // ajouter le groupe à la liste des groupes réservés
+            setGroupesReserves(prev => [...prev, groupeSelectionne.id]);
             setShowConfirm(false);
             setGroupeSelectionne(null);
             alert('Réservation effectuée avec succès !');
@@ -159,7 +185,6 @@ function GroupesPage() {
                 capaciteMax: parseInt(newCapacite),
                 coachName: user?.email,
             });
-            // fermer modal et recharger groupes
             setShowModal(false);
             const res = await api.get(`/groupes/course/${courseId}`);
             setGroupes(res.data);
@@ -173,7 +198,6 @@ function GroupesPage() {
     const handleToggle = async (groupeId: number) => {
         try {
             await api.patch(`/groupes/${groupeId}/toggle`);
-            // mettre à jour localement
             setGroupes(groupes.map(g =>
                 g.id === groupeId ? { ...g, estValide: !g.estValide } : g
             ));
@@ -187,7 +211,6 @@ function GroupesPage() {
         if (!confirm('Voulez-vous vraiment supprimer ce groupe ?')) return;
         try {
             await api.delete(`/groupes/${groupeId}`);
-            // retirer le groupe de la liste
             setGroupes(groupes.filter(g => g.id !== groupeId));
         } catch (err: any) {
             alert(err.response?.data?.message || 'Erreur lors de la suppression');
@@ -211,7 +234,6 @@ function GroupesPage() {
                 capaciteMax: parseInt(editCapacite),
             });
             setEditingGroupeId(null);
-            // recharger les groupes
             const res = await api.get(`/groupes/course/${courseId}`);
             setGroupes(res.data);
             alert('Groupe modifié avec succès !');
@@ -220,13 +242,18 @@ function GroupesPage() {
         }
     };
 
+    // afficher spinner pendant le chargement
+    if (loading) return <Spinner />;
+
     return (
         <div style={styles.container}>
-            {/* breadcrumb */}
+            {/* breadcrumb — Services → Nom du service → Titre du cours */}
             <div style={styles.breadcrumb}>
                 <Link to="/services" style={styles.breadcrumbLink}>Services</Link>
                 <span style={styles.breadcrumbSep}> → </span>
-                <Link to={`/courses?serviceId=${course?.id}`} style={styles.breadcrumbLink}>Cours</Link>
+                <Link to={`/courses?serviceId=${course?.serviceId}`} style={styles.breadcrumbLink}>
+                    {service?.nom || 'Cours'}
+                </Link>
                 <span style={styles.breadcrumbSep}> → </span>
                 <span style={styles.breadcrumbCurrent}>{course?.title}</span>
             </div>
@@ -299,11 +326,9 @@ function GroupesPage() {
                             <p>Durée : {groupeSelectionne.dureeEnSemaines} semaines</p>
                         </div>
                         <div style={styles.modalButtons}>
-                            {/* confirmer */}
                             <button onClick={handleConfirmerReservation} style={styles.btnSubmit}>
                                 Confirmer
                             </button>
-                            {/* annuler */}
                             <button onClick={() => setShowConfirm(false)} style={styles.btnCancel}>
                                 Annuler
                             </button>
@@ -380,6 +405,8 @@ function GroupesPage() {
                 {groupesFiltres.map(groupe => {
                     const places = placesRestantes[groupe.id];
                     const complet = places === 0;
+                    // vérifier si le client a déjà réservé ce groupe
+                    const dejaReserve = groupesReserves.includes(groupe.id);
 
                     return (
                         <div key={groupe.id} style={styles.card}>
@@ -408,11 +435,9 @@ function GroupesPage() {
                                             placeholder="Capacité"
                                         />
                                         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                            {/* sauvegarder */}
                                             <button onClick={() => handleSaveGroupe(groupe.id)} style={styles.btnSubmit}>
                                                 Sauvegarder
                                             </button>
-                                            {/* annuler édition */}
                                             <button onClick={() => setEditingGroupeId(null)} style={styles.btnCancel}>
                                                 Annuler
                                             </button>
@@ -448,7 +473,6 @@ function GroupesPage() {
                                         {/* boutons admin */}
                                         {user?.role === 'admin' && (
                                             <div>
-                                                {/* première rangée — valider + modifier */}
                                                 <div style={{ ...styles.buttons, marginBottom: '0.5rem' }}>
                                                     <button
                                                         onClick={() => handleToggle(groupe.id)}
@@ -460,7 +484,6 @@ function GroupesPage() {
                                                         Modifier
                                                     </button>
                                                 </div>
-                                                {/* deuxième rangée — supprimer */}
                                                 <div style={styles.buttons}>
                                                     <button onClick={() => handleDelete(groupe.id)} style={styles.btnDelete}>
                                                         Supprimer
@@ -472,11 +495,9 @@ function GroupesPage() {
                                         {/* boutons coach */}
                                         {user?.role === 'coach' && (
                                             <div style={styles.buttons}>
-                                                {/* modifier */}
                                                 <button onClick={() => handleEditGroupe(groupe)} style={styles.btnWaitlist}>
                                                     Modifier
                                                 </button>
-                                                {/* supprimer */}
                                                 <button onClick={() => handleDelete(groupe.id)} style={styles.btnDelete}>
                                                     Supprimer
                                                 </button>
@@ -485,29 +506,38 @@ function GroupesPage() {
 
                                         {/* boutons client — seulement si groupe validé */}
                                         {(user?.role === 'client' || !isLoggedIn) && groupe.estValide && (
-                                    <div style={styles.buttons}>
-                                        <button
-                                        onClick={() => {
-                                            if (!isLoggedIn) {
-                                            navigate(`/login?redirect=/groupes?courseId=${courseId}`);
-                                            return;
-                                            }
-                                            // rediriger vers le formulaire de paiement avec courseId et groupeId
-                                            navigate(`/payment?courseId=${courseId}&groupeId=${groupe.id}`);
-                                        }}
-                                        style={complet ? styles.btnDisabled : styles.btnReserver}
-                                        disabled={complet}
-                                        >
-                                        {complet ? 'Complet' : 'Réserver'}
-                                        </button>
-                                        {/* liste d'attente si complet */}
-                                        {complet && isLoggedIn && (
-                                        <button onClick={() => handleWaitlist(groupe.id)} style={styles.btnWaitlist}>
-                                            Liste d'attente
-                                        </button>
+                                            <div style={styles.buttons}>
+                                                {/* déjà réservé — afficher badge */}
+                                                {dejaReserve ? (
+                                                    <div style={styles.dejaReserve}>
+                                                        ✓ Déjà réservé
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        {/* réserver ou complet */}
+                                                        <button
+                                                            onClick={() => {
+                                                                if (!isLoggedIn) {
+                                                                    navigate(`/login?redirect=/groupes?courseId=${courseId}`);
+                                                                    return;
+                                                                }
+                                                                navigate(`/payment?courseId=${courseId}&groupeId=${groupe.id}`);
+                                                            }}
+                                                            style={complet ? styles.btnDisabled : styles.btnReserver}
+                                                            disabled={complet}
+                                                        >
+                                                            {complet ? 'Complet' : 'Réserver'}
+                                                        </button>
+                                                        {/* liste d'attente si complet */}
+                                                        {complet && isLoggedIn && (
+                                                            <button onClick={() => handleWaitlist(groupe.id)} style={styles.btnWaitlist}>
+                                                                Liste d'attente
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
                                         )}
-                                    </div>
-                                    )}
 
                                         {/* message si non connecté */}
                                         {!isLoggedIn && groupe.estValide && (
@@ -629,7 +659,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         marginBottom: '1rem',
         textAlign: 'center',
     },
-    // fond sombre derrière le modal
     overlay: {
         position: 'fixed',
         top: 0,
@@ -845,6 +874,17 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '0.95rem',
         fontWeight: 'bold',
         cursor: 'pointer',
+    },
+    dejaReserve: {
+        flex: 1,
+        backgroundColor: '#e6f4ea',
+        color: '#2d7a3a',
+        border: '1px solid #2d7a3a',
+        padding: '0.75rem',
+        borderRadius: '4px',
+        fontSize: '0.95rem',
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     loginMsg: {
         color: '#666',

@@ -13,6 +13,7 @@ interface Course {
     bodyPart: string;
     niveau: string;
     serviceId: number;
+    prix: number;
 }
 
 interface Service {
@@ -42,12 +43,14 @@ function GestionCoursPage() {
     const [newBodyPart, setNewBodyPart] = useState('');
     const [newNiveau, setNewNiveau] = useState('');
     const [newServiceId, setNewServiceId] = useState(serviceIdFilter || '');
+    const [newPrix, setNewPrix] = useState('');
 
     // mode édition
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editTitle, setEditTitle] = useState('');
     const [editDescription, setEditDescription] = useState('');
     const [editNiveau, setEditNiveau] = useState('');
+    const [editPrix, setEditPrix] = useState('');
 
     useEffect(() => {
         // rediriger si pas coach ou admin
@@ -96,6 +99,7 @@ function GestionCoursPage() {
                 bodyPart: newBodyPart,
                 niveau: newNiveau,
                 serviceId: newServiceId ? parseInt(newServiceId) : undefined,
+                prix: newPrix ? parseFloat(newPrix) : 0,
             });
             // fermer modal et reset champs
             setShowModal(false);
@@ -104,6 +108,7 @@ function GestionCoursPage() {
             setNewBodyPart('');
             setNewNiveau('');
             setNewServiceId(serviceIdFilter || '');
+            setNewPrix('');
             await rechargerCours();
             alert(user?.role === 'coach' ? 'Cours créé — en attente de validation admin !' : 'Cours créé avec succès !');
         } catch (err: any) {
@@ -117,6 +122,7 @@ function GestionCoursPage() {
         setEditTitle(course.title);
         setEditDescription(course.description);
         setEditNiveau(course.niveau || '');
+        setEditPrix(String(course.prix || 0));
     };
 
     // sauvegarder modifications
@@ -126,6 +132,7 @@ function GestionCoursPage() {
                 title: editTitle,
                 description: editDescription,
                 niveau: editNiveau,
+                prix: parseFloat(editPrix),
             });
             setEditingId(null);
             await rechargerCours();
@@ -277,6 +284,18 @@ function GestionCoursPage() {
                                     ))}
                                 </select>
                             </div>
+                            <div style={styles.field}>
+                                <label style={styles.label}>Prix ($)</label>
+                                <input
+                                    type="number"
+                                    value={newPrix}
+                                    onChange={e => setNewPrix(e.target.value)}
+                                    style={styles.input}
+                                    placeholder="ex: 25"
+                                    min="0"
+                                    step="0.01"
+                                />
+                            </div>
 
                             {/* message pour coach */}
                             {user?.role === 'coach' && (
@@ -304,6 +323,7 @@ function GestionCoursPage() {
                             <th style={styles.th}>Service</th>
                             <th style={styles.th}>Niveau</th>
                             <th style={styles.th}>Coach</th>
+                            <th style={styles.th}>Prix</th>
                             <th style={styles.th}>Statut</th>
                             <th style={styles.th}>Actions</th>
                         </tr>
@@ -328,6 +348,17 @@ function GestionCoursPage() {
                                         </td>
                                         <td style={styles.td}>{course.coachName || '—'}</td>
                                         <td style={styles.td}>
+                                            {/* édition du prix */}
+                                            <input
+                                                type="number"
+                                                value={editPrix}
+                                                onChange={e => setEditPrix(e.target.value)}
+                                                style={{ ...styles.inputInline, width: '70px' }}
+                                                min="0"
+                                                step="0.01"
+                                            />
+                                        </td>
+                                        <td style={styles.td}>
                                             <span style={course.isActive ? styles.badgeActive : styles.badgeInactive}>
                                                 {course.isActive ? 'Actif' : 'Inactif'}
                                             </span>
@@ -347,6 +378,7 @@ function GestionCoursPage() {
                                         <td style={styles.td}>{getNomService(course.serviceId)}</td>
                                         <td style={styles.td}>{course.niveau || '—'}</td>
                                         <td style={styles.td}>{course.coachName || '—'}</td>
+                                        <td style={styles.td}>{course.prix ? `${course.prix}$` : '—'}</td>
                                         <td style={styles.td}>
                                             <span style={course.isActive ? styles.badgeActive : styles.badgeInactive}>
                                                 {course.isActive ? 'Actif' : 'Inactif'}
@@ -452,7 +484,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         cursor: 'pointer',
         marginLeft: 'auto',
     },
-    // filtres
     filtres: {
         display: 'flex',
         gap: '1rem',
@@ -490,7 +521,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: '0.85rem',
         whiteSpace: 'nowrap',
     },
-    // fond sombre derrière le modal
     overlay: {
         position: 'fixed',
         top: 0,

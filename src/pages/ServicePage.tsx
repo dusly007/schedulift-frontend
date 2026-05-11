@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import Spinner from '../components/Spinner';
 
 interface Service {
     id: number;
@@ -13,18 +14,23 @@ function ServicesPage() {
     const navigate = useNavigate();
     const [services, setServices] = useState<Service[]>([]);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         // GET /services au chargement de la page
         api.get('/services')
             .then(res => setServices(res.data))
-            .catch(() => setError('Erreur lors du chargement des services'));
+            .catch(() => setError('Erreur lors du chargement des services'))
+            .finally(() => setLoading(false));
     }, []);
 
     // clic sur un service — rediriger vers les cours de ce service
     const handleServiceClick = (serviceId: number) => {
         navigate(`/courses?serviceId=${serviceId}`);
     };
+
+    // afficher spinner pendant le chargement
+    if (loading) return <Spinner />;
 
     return (
         <div style={styles.container}>

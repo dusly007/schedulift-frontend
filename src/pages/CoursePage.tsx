@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../services/api';
+import Spinner from '../components/Spinner';
 
 interface Course {
     id: number;
@@ -13,6 +14,7 @@ interface Course {
     bodyPart: string;
     niveau: string;
     serviceId: number;
+    prix: number;
 }
 
 interface Service {
@@ -29,6 +31,8 @@ function CoursesPage() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [service, setService] = useState<Service | null>(null);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
+
     // afficher ou cacher le modal
     const [showModal, setShowModal] = useState(false);
     // champs formulaire création
@@ -42,25 +46,30 @@ function CoursesPage() {
     const [editDescription, setEditDescription] = useState('');
 
     useEffect(() => {
-        // charger les infos du service si serviceId présent
-        if (serviceId) {
-            api.get(`/services/${serviceId}`)
-                .then(res => setService(res.data))
-                .catch(() => setError('Service non trouvé'));
-        }
+        const fetchData = async () => {
+            try {
+                // charger les infos du service si serviceId présent
+                if (serviceId) {
+                    const serviceRes = await api.get(`/services/${serviceId}`);
+                    setService(serviceRes.data);
+                }
 
-        // appel GET /courses au chargement de la page
-        api.get('/courses')
-            .then(res => {
-                const allCourses = res.data;
-                // filtrer par serviceId si présent
+                // charger les cours
+                const coursesRes = await api.get('/courses');
+                const allCourses = coursesRes.data;
                 if (serviceId) {
                     setCourses(allCourses.filter((c: Course) => c.serviceId === parseInt(serviceId)));
                 } else {
                     setCourses(allCourses);
                 }
-            })
-            .catch(() => setError('Erreur lors du chargement des cours'));
+            } catch {
+                setError('Erreur lors du chargement des cours');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
     }, [serviceId]);
 
     // recharger les cours
@@ -91,7 +100,6 @@ function CoursesPage() {
             setNewDescription('');
             setNewBodyPart('');
             setNewNiveau('');
-            // recharger la liste des cours
             await rechargerCours();
             alert(user?.role === 'coach' ? 'Cours créé — en attente de validation admin !' : 'Cours créé avec succès !');
         } catch (err: any) {
@@ -114,7 +122,6 @@ function CoursesPage() {
                 description: editDescription,
             });
             setEditingCourseId(null);
-            // recharger les cours
             await rechargerCours();
             alert('Cours modifié avec succès !');
         } catch (err: any) {
@@ -126,7 +133,6 @@ function CoursesPage() {
     const handleToggleCourse = async (id: number) => {
         try {
             await api.patch(`/courses/${id}/toggle`);
-            // mettre à jour localement
             setCourses(courses.map(c =>
                 c.id === id ? { ...c, isActive: !c.isActive } : c
             ));
@@ -145,6 +151,9 @@ function CoursesPage() {
             alert(err.response?.data?.message || 'Erreur lors de la suppression');
         }
     };
+
+    // afficher spinner pendant le chargement
+    if (loading) return <Spinner />;
 
     return (
         <div style={styles.container}>
@@ -224,11 +233,9 @@ function CoursesPage() {
                             )}
 
                             <div style={styles.modalButtons}>
-                                {/* soumettre le formulaire */}
                                 <button type="submit" style={styles.btnSubmit}>
                                     Créer
                                 </button>
-                                {/* fermer le modal */}
                                 <button
                                     type="button"
                                     onClick={() => setShowModal(false)}
@@ -276,11 +283,9 @@ function CoursesPage() {
                                         placeholder="Description"
                                     />
                                     <div style={styles.modalButtons}>
-                                        {/* sauvegarder */}
                                         <button onClick={() => handleSaveCourse(course.id)} style={styles.btnSubmit}>
                                             Sauvegarder
                                         </button>
-                                        {/* annuler édition */}
                                         <button onClick={() => setEditingCourseId(null)} style={styles.btnCancel}>
                                             Annuler
                                         </button>
@@ -317,12 +322,15 @@ function CoursesPage() {
                                         {course.coachName && (
                                             <span style={styles.infoItem}>Coach : {course.coachName}</span>
                                         )}
+                                        {/* prix du cours */}
+                                        {course.prix > 0 && (
+                                            <span style={styles.prix}>{course.prix}$ / groupe</span>
+                                        )}
                                     </div>
 
                                     {/* boutons admin */}
                                     {user?.role === 'admin' && (
                                         <div>
-                                            {/* première rangée — activer/désactiver + modifier */}
                                             <div style={{ ...styles.modalButtons, marginBottom: '0.5rem' }}>
                                                 <button
                                                     onClick={() => handleToggleCourse(course.id)}
@@ -334,7 +342,6 @@ function CoursesPage() {
                                                     Modifier
                                                 </button>
                                             </div>
-                                            {/* deuxième rangée — supprimer */}
                                             <div style={styles.modalButtons}>
                                                 <button onClick={() => handleDeleteCourse(course.id)} style={styles.btnDelete}>
                                                     Supprimer
@@ -346,11 +353,9 @@ function CoursesPage() {
                                     {/* boutons coach */}
                                     {user?.role === 'coach' && (
                                         <div style={styles.modalButtons}>
-                                            {/* modifier */}
                                             <button onClick={() => handleEditCourse(course)} style={styles.btnWaitlist}>
                                                 Modifier
                                             </button>
-                                            {/* supprimer */}
                                             <button onClick={() => handleDeleteCourse(course.id)} style={styles.btnDelete}>
                                                 Supprimer
                                             </button>
@@ -422,7 +427,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontWeight: 'bold',
         cursor: 'pointer',
     },
-    // fond sombre derrière le modal
     overlay: {
         position: 'fixed',
         top: 0,
@@ -618,6 +622,12 @@ const styles: { [key: string]: React.CSSProperties } = {
         color: '#1a2f5e',
         fontSize: '0.85rem',
         fontWeight: '500',
+    },
+    prix: {
+        color: '#f47c20',
+        fontSize: '1.1rem',
+        fontWeight: 'bold',
+        marginTop: '0.5rem',
     },
     btnVoir: {
         width: '100%',

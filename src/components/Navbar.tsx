@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import logo from '../assets/logo.png';
@@ -8,7 +8,6 @@ function Navbar() {
     const navigate = useNavigate();
 
     const handleSignout = async () => {
-        ///auth/signout
         await api.post('/auth/signout');
         // déconnecté
         setUser(null);
@@ -16,44 +15,53 @@ function Navbar() {
         navigate('/login');
     };
 
+    // style dynamique selon si le lien est actif
+    const getLinkStyle = ({ isActive }: { isActive: boolean }): React.CSSProperties => ({
+        color: isActive ? '#f47c20' : '#1a2f5e',
+        textDecoration: 'none',
+        fontSize: '0.95rem',
+        fontWeight: isActive ? 'bold' : '500',
+        borderBottom: isActive ? '2px solid #f47c20' : '2px solid transparent',
+        paddingBottom: '0.2rem',
+        transition: 'all 0.2s',
+    });
+
     return (
         <nav style={styles.nav}>
             {/* Logo */}
-            <Link to="/">
+            <NavLink to="/" style={{ lineHeight: 0 }}>
                 <img src={logo} alt="Schedulift" style={styles.logo} />
-            </Link>
+            </NavLink>
 
             <div style={styles.links}>
                 {/* liens accessibles à tous */}
-                <Link to="/" style={styles.link}>Accueil</Link>
+                <NavLink to="/" end style={getLinkStyle}>Accueil</NavLink>
 
                 {/* services — visiteur et client seulement */}
                 {(!user || user?.role === 'client') && (
-                    <Link to="/services" style={styles.link}>Services</Link>
+                    <NavLink to="/services" style={getLinkStyle}>Services</NavLink>
                 )}
-
-                
 
                 {/* réservations — client seulement */}
                 {user?.role === 'client' && (
-                    <Link to="/reservations" style={styles.link}>Mes réservations</Link>
+                    <NavLink to="/reservations" style={getLinkStyle}>Mes réservations</NavLink>
                 )}
 
                 {/* lien gestion — coach et admin seulement */}
                 {(user?.role === 'coach' || user?.role === 'admin') && (
-                    <Link to="/gestion/services" style={styles.link}>Gestion</Link>
-                    
+                    <NavLink to="/gestion/services" style={getLinkStyle}>Gestion</NavLink>
                 )}
-                {/* Admin- Voir les messages */}
+
+                {/* admin — voir les messages / contact */}
                 {user?.role === 'admin' ? (
-                    <Link to="/admin/messages" style={styles.link}>Voir les messages</Link>
+                    <NavLink to="/admin/messages" style={getLinkStyle}>Voir les messages</NavLink>
                 ) : (
-                    <Link to="/contact" style={styles.link}>Contact</Link>
+                    <NavLink to="/contact" style={getLinkStyle}>Contact</NavLink>
                 )}
 
                 {/* lien gérer utilisateurs — admin seulement */}
                 {user?.role === 'admin' && (
-                    <Link to="/admin/users" style={styles.link}>Gérer les utilisateurs</Link>
+                    <NavLink to="/admin/users" style={getLinkStyle}>Gérer les utilisateurs</NavLink>
                 )}
 
                 {/* si connecté — bouton déconnexion */}
@@ -62,10 +70,7 @@ function Navbar() {
                         Déconnexion
                     </button>
                 ) : (
-                    /* si non connecté — connexion et inscription */
-                    <>
-                        <Link to="/login" style={styles.buttonLogin}>Connexion</Link>
-                    </>
+                    <NavLink to="/login" style={styles.buttonLogin}>Connexion</NavLink>
                 )}
             </div>
         </nav>
@@ -93,24 +98,10 @@ const styles: { [key: string]: React.CSSProperties } = {
         gap: '1.5rem',
         alignItems: 'center',
     },
-    link: {
-        color: '#1a2f5e',
-        textDecoration: 'none',
-        fontSize: '0.95rem',
-        fontWeight: '500',
-    },
     buttonLogin: {
         color: '#1a2f5e',
         textDecoration: 'none',
         border: '1px solid #1a2f5e',
-        padding: '0.4rem 1rem',
-        borderRadius: '4px',
-        fontSize: '0.95rem',
-    },
-    buttonSignup: {
-        backgroundColor: '#f47c20',
-        color: 'white',
-        textDecoration: 'none',
         padding: '0.4rem 1rem',
         borderRadius: '4px',
         fontSize: '0.95rem',
