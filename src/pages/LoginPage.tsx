@@ -1,18 +1,15 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext'; 
 
 function LoginPage() {
     
     const navigate = useNavigate();
+     // récupérer la page d'origine si présente dans l'URL
     const location = useLocation();
     const from = location.state?.from || '/courses';
     const { setUser } = useAuth();
-    const [searchParams] = useSearchParams();
-    // récupérer la page d'origine si présente dans l'URL
-    const redirect = searchParams.get('redirect') || '/';
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -24,8 +21,12 @@ function LoginPage() {
         try{
             const res = await api.post('/auth/signin', { email, password });
             setUser(res.data);
-            // rediriger vers la page d'origine après connexion
-            navigate(from); 
+
+            if (res.data.role === 'admin' || res.data.role === 'coach') {
+                navigate('/');
+            } else {
+                navigate(from);
+            }
 
         } catch (err) {
             setError('Invalid email or password');
