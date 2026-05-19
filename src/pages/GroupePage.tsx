@@ -129,6 +129,7 @@ function GroupesPage() {
     });
 
     // ouvrir modal confirmation avant réservation
+    // @ts-ignore
     const handleReserverClick = (groupe: Groupe) => {
         if (!isLoggedIn) {
             navigate(`/login?redirect=/groupes?courseId=${courseId}`);
